@@ -1,31 +1,89 @@
 /**
- * Main application logic for Card Vault - Trading Card Tracker.
+ * Card Vault - Trading Card Tracker
+ * Main application logic with event delegation (no inline handlers).
  */
 
 let valueChart = null;
 
-// === Page Navigation ===
-document.querySelectorAll('[data-page]').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const page = link.getAttribute('data-page');
-    showPage(page);
-  });
-});
+// Temporary store for search results so we can reference them by index
+// instead of embedding JSON in onclick attributes.
+const searchResultCache = { pokemon: [], onepiece: [], invincible: [] };
 
+// === Page Navigation ===
 function showPage(page) {
   document.querySelectorAll('.page-content').forEach(p => p.classList.add('d-none'));
-  document.getElementById('page-' + page).classList.remove('d-none');
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.remove('d-none');
 
-  document.querySelectorAll('[data-page]').forEach(l => l.classList.remove('active'));
-  const activeLink = document.querySelector(`[data-page="${page}"]`);
-  if (activeLink) activeLink.classList.add('active');
+  // Update desktop nav
+  document.querySelectorAll('.navbar [data-page]').forEach(l => l.classList.remove('active'));
+  const desktopLink = document.querySelector(`.navbar [data-page="${page}"]`);
+  if (desktopLink) desktopLink.classList.add('active');
+
+  // Update mobile bottom nav
+  document.querySelectorAll('.bottom-nav [data-page]').forEach(l => l.classList.remove('active'));
+  const mobileLink = document.querySelector(`.bottom-nav [data-page="${page}"]`);
+  if (mobileLink) mobileLink.classList.add('active');
 
   if (page === 'dashboard') refreshDashboard();
   if (['pokemon', 'onepiece', 'invincible'].includes(page)) renderCollection(page);
 }
 
-// === Lookup Tab Navigation ===
+// Delegated click handler for all [data-page] links
+document.addEventListener('click', (e) => {
+  const pageLink = e.target.closest('[data-page]');
+  if (pageLink) {
+    e.preventDefault();
+    showPage(pageLink.getAttribute('data-page'));
+    return;
+  }
+
+  // Dashboard stat card clicks
+  const pageCard = e.target.closest('[data-page-link]');
+  if (pageCard && pageCard.classList.contains('clickable')) {
+    showPage(pageCard.getAttribute('data-page-link'));
+    return;
+  }
+
+  // Add card buttons
+  const addBtn = e.target.closest('[data-add-card]');
+  if (addBtn) {
+    openAddCardModal(addBtn.getAttribute('data-add-card'));
+    return;
+  }
+
+  // Collection card click -> detail
+  const collCard = e.target.closest('[data-card-id]');
+  if (collCard && !e.target.closest('button')) {
+    const category = collCard.getAttribute('data-category');
+    const cardId = collCard.getAttribute('data-card-id');
+    showCardDetail(category, cardId);
+    return;
+  }
+
+  // Search result "Add to Collection" button
+  const addSearchBtn = e.target.closest('[data-search-add]');
+  if (addSearchBtn) {
+    const cat = addSearchBtn.getAttribute('data-search-cat');
+    const idx = parseInt(addSearchBtn.getAttribute('data-search-add'), 10);
+    const cached = searchResultCache[cat];
+    if (cached && cached[idx]) {
+      openAddCardModal(cat, cached[idx]);
+    }
+    return;
+  }
+
+  // Manual add from search status
+  const manualAddBtn = e.target.closest('[data-manual-add]');
+  if (manualAddBtn) {
+    const cat = manualAddBtn.getAttribute('data-manual-add');
+    const name = manualAddBtn.getAttribute('data-manual-name') || '';
+    openAddCardModal(cat, { name });
+    return;
+  }
+});
+
+// Lookup tab navigation
 document.querySelectorAll('[data-lookup]').forEach(link => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
@@ -37,19 +95,30 @@ document.querySelectorAll('[data-lookup]').forEach(link => {
   });
 });
 
+// Filter inputs
+document.querySelectorAll('[data-filter]').forEach(input => {
+  input.addEventListener('input', () => {
+    renderCollection(input.getAttribute('data-filter'));
+  });
+});
+
+// Sort selects
+document.querySelectorAll('[data-sort]').forEach(select => {
+  select.addEventListener('change', () => {
+    renderCollection(select.getAttribute('data-sort'));
+  });
+});
+
 // === Dashboard ===
 function refreshDashboard() {
   const stats = Storage.getAllStats();
 
   document.getElementById('total-value').textContent = formatCurrency(stats.total.totalValue);
   document.getElementById('total-cards').textContent = stats.total.totalCards;
-
   document.getElementById('pokemon-value').textContent = formatCurrency(stats.pokemon.totalValue);
   document.getElementById('pokemon-count').textContent = stats.pokemon.totalCards;
-
   document.getElementById('onepiece-value').textContent = formatCurrency(stats.onepiece.totalValue);
   document.getElementById('onepiece-count').textContent = stats.onepiece.totalCards;
-
   document.getElementById('invincible-value').textContent = formatCurrency(stats.invincible.totalValue);
   document.getElementById('invincible-count').textContent = stats.invincible.totalCards;
 
@@ -60,7 +129,6 @@ function refreshDashboard() {
 
 function renderValueChart(stats) {
   const ctx = document.getElementById('valueChart').getContext('2d');
-
   if (valueChart) valueChart.destroy();
 
   const hasData = stats.total.totalValue > 0;
@@ -84,11 +152,11 @@ function renderValueChart(stats) {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: '#ccc', padding: 15 }
+          labels: { color: '#ccc', padding: 15, font: { size: 12 } }
         },
         tooltip: {
           callbacks: {
-            label: (ctx) => hasData ? `${ctx.label}: ${formatCurrency(ctx.raw)}` : 'No data'
+            label: (item) => hasData ? `${item.label}: ${formatCurrency(item.raw)}` : 'No data'
           }
         }
       },
@@ -108,16 +176,15 @@ function renderTopCards() {
 
   container.innerHTML = topCards.map((card, i) => {
     const totalVal = (parseFloat(card.value) || 0) * (parseInt(card.quantity) || 1);
-    const catIcon = getCategoryIcon(card.category);
     return `
       <div class="top-card-item">
         <div>
           <span class="text-muted me-2">#${i + 1}</span>
-          ${catIcon}
+          ${getCategoryIcon(card.category)}
           <strong>${escapeHtml(card.name)}</strong>
-          <span class="text-muted ms-2">${escapeHtml(card.set || '')}</span>
+          <span class="text-muted ms-1 small">${escapeHtml(card.set || '')}</span>
         </div>
-        <span class="fw-bold text-success">${formatCurrency(totalVal)}</span>
+        <span class="fw-bold text-success text-nowrap">${formatCurrency(totalVal)}</span>
       </div>
     `;
   }).join('');
@@ -139,9 +206,9 @@ function renderRecentCards() {
           <tr>
             <th>Card</th>
             <th>Category</th>
-            <th>Set</th>
+            <th class="d-none d-sm-table-cell">Set</th>
             <th>Value</th>
-            <th>Added</th>
+            <th class="d-none d-md-table-cell">Added</th>
           </tr>
         </thead>
         <tbody>
@@ -149,9 +216,9 @@ function renderRecentCards() {
             <tr>
               <td>${escapeHtml(card.name)}</td>
               <td>${getCategoryBadge(card.category)}</td>
-              <td class="text-muted">${escapeHtml(card.set || '-')}</td>
+              <td class="text-muted d-none d-sm-table-cell">${escapeHtml(card.set || '-')}</td>
               <td class="text-success fw-bold">${formatCurrency(parseFloat(card.value) || 0)}</td>
-              <td class="text-muted">${formatDate(card.addedAt)}</td>
+              <td class="text-muted d-none d-md-table-cell">${formatDate(card.addedAt)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -164,7 +231,8 @@ function renderRecentCards() {
 function renderCollection(category) {
   const container = document.getElementById('collection-' + category);
   let cards = Storage.getCollection(category);
-  const sortVal = document.getElementById('sort-' + category).value;
+  const sortEl = document.getElementById('sort-' + category);
+  const sortVal = sortEl ? sortEl.value : 'date-desc';
 
   cards = sortCards(cards, sortVal);
 
@@ -184,7 +252,7 @@ function renderCollection(category) {
       <div class="col-12 empty-state">
         <i class="bi bi-collection"></i>
         <h5>No cards yet</h5>
-        <p>Click "Add Card" to start building your collection, or use Card Lookup to find and add cards.</p>
+        <p>Tap "Add Card" or use Card Lookup to find and add cards.</p>
       </div>
     `;
     return;
@@ -201,7 +269,7 @@ function renderCollection(category) {
 
     return `
       <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-        <div class="collection-card" onclick="showCardDetail('${category}', '${card.id}')">
+        <div class="collection-card" data-card-id="${escapeAttr(card.id)}" data-category="${escapeAttr(category)}">
           ${card.imageUrl
             ? `<img src="${escapeAttr(card.imageUrl)}" class="card-img-top" alt="${escapeAttr(card.name)}" loading="lazy">`
             : `<div class="no-image"><i class="bi bi-image"></i></div>`
@@ -222,37 +290,25 @@ function renderCollection(category) {
   }).join('');
 }
 
-function filterCollection(category) {
-  renderCollection(category);
-}
-
 function sortCards(cards, sortVal) {
   const sorted = [...cards];
   switch (sortVal) {
-    case 'date-desc':
-      sorted.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
-      break;
-    case 'date-asc':
-      sorted.sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt));
-      break;
-    case 'value-desc':
-      sorted.sort((a, b) => ((parseFloat(b.value) || 0) * (parseInt(b.quantity) || 1)) -
-                             ((parseFloat(a.value) || 0) * (parseInt(a.quantity) || 1)));
-      break;
-    case 'value-asc':
-      sorted.sort((a, b) => ((parseFloat(a.value) || 0) * (parseInt(a.quantity) || 1)) -
-                             ((parseFloat(b.value) || 0) * (parseInt(b.quantity) || 1)));
-      break;
-    case 'name-asc':
-      sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      break;
+    case 'date-desc': sorted.sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt)); break;
+    case 'date-asc': sorted.sort((a, b) => new Date(a.addedAt) - new Date(b.addedAt)); break;
+    case 'value-desc': sorted.sort((a, b) => cardTotal(b) - cardTotal(a)); break;
+    case 'value-asc': sorted.sort((a, b) => cardTotal(a) - cardTotal(b)); break;
+    case 'name-asc': sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
   }
   return sorted;
 }
 
+function cardTotal(c) {
+  return (parseFloat(c.value) || 0) * (parseInt(c.quantity) || 1);
+}
+
 // === Add / Edit Card Modal ===
 function openAddCardModal(category, prefill = {}) {
-  document.getElementById('card-id').value = '';
+  document.getElementById('card-id').value = prefill.id || '';
   document.getElementById('card-category').value = category;
   document.getElementById('card-name').value = prefill.name || '';
   document.getElementById('card-set').value = prefill.set || '';
@@ -266,10 +322,6 @@ function openAddCardModal(category, prefill = {}) {
   document.getElementById('card-notes').value = prefill.notes || '';
 
   document.getElementById('addCardModalTitle').textContent = prefill.id ? 'Edit Card' : 'Add Card';
-  if (prefill.id) {
-    document.getElementById('card-id').value = prefill.id;
-  }
-
   new bootstrap.Modal(document.getElementById('addCardModal')).show();
 }
 
@@ -281,7 +333,7 @@ function saveCard() {
   if (!value || parseFloat(value) < 0) { alert('Please enter a valid current value.'); return; }
 
   const cardData = {
-    name: name,
+    name,
     set: document.getElementById('card-set').value.trim(),
     number: document.getElementById('card-number').value.trim(),
     rarity: document.getElementById('card-rarity').value,
@@ -306,6 +358,8 @@ function saveCard() {
   renderCollection(category);
   refreshDashboard();
 }
+
+document.getElementById('btn-save-card').addEventListener('click', saveCard);
 
 // === Card Detail Modal ===
 function showCardDetail(category, cardId) {
@@ -343,11 +397,12 @@ function showCardDetail(category, cardId) {
     </dl>
   `;
 
+  // Footer buttons use data attributes
   document.getElementById('cardDetailFooter').innerHTML = `
-    <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteCard('${category}', '${card.id}')">
+    <button class="btn btn-outline-danger btn-sm" data-action="delete" data-cat="${escapeAttr(category)}" data-id="${escapeAttr(card.id)}">
       <i class="bi bi-trash me-1"></i>Delete
     </button>
-    <button class="btn btn-outline-primary btn-sm" onclick="editCard('${category}', '${card.id}')">
+    <button class="btn btn-outline-primary btn-sm" data-action="edit" data-cat="${escapeAttr(category)}" data-id="${escapeAttr(card.id)}">
       <i class="bi bi-pencil me-1"></i>Edit
     </button>
   `;
@@ -355,35 +410,43 @@ function showCardDetail(category, cardId) {
   new bootstrap.Modal(document.getElementById('cardDetailModal')).show();
 }
 
-function editCard(category, cardId) {
-  const cards = Storage.getCollection(category);
-  const card = cards.find(c => c.id === cardId);
-  if (!card) return;
+// Detail modal footer event delegation
+document.getElementById('cardDetailFooter').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
 
-  bootstrap.Modal.getInstance(document.getElementById('cardDetailModal')).hide();
-  setTimeout(() => openAddCardModal(category, { ...card }), 300);
-}
+  const action = btn.getAttribute('data-action');
+  const category = btn.getAttribute('data-cat');
+  const cardId = btn.getAttribute('data-id');
+
+  if (action === 'edit') {
+    const cards = Storage.getCollection(category);
+    const card = cards.find(c => c.id === cardId);
+    if (!card) return;
+    bootstrap.Modal.getInstance(document.getElementById('cardDetailModal')).hide();
+    setTimeout(() => openAddCardModal(category, { ...card }), 300);
+  } else if (action === 'delete') {
+    bootstrap.Modal.getInstance(document.getElementById('cardDetailModal')).hide();
+    setTimeout(() => confirmDeleteCard(category, cardId), 300);
+  }
+});
 
 function confirmDeleteCard(category, cardId) {
-  bootstrap.Modal.getInstance(document.getElementById('cardDetailModal')).hide();
+  const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+  const btn = document.getElementById('confirmDeleteBtn');
 
-  setTimeout(() => {
-    const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-    const btn = document.getElementById('confirmDeleteBtn');
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+  newBtn.id = 'confirmDeleteBtn';
 
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.id = 'confirmDeleteBtn';
+  newBtn.addEventListener('click', () => {
+    Storage.deleteCard(category, cardId);
+    modal.hide();
+    renderCollection(category);
+    refreshDashboard();
+  });
 
-    newBtn.addEventListener('click', () => {
-      Storage.deleteCard(category, cardId);
-      modal.hide();
-      renderCollection(category);
-      refreshDashboard();
-    });
-
-    modal.show();
-  }, 300);
+  modal.show();
 }
 
 // === Card Lookup - Pokemon ===
@@ -401,9 +464,7 @@ async function loadPokemonSets() {
       select.appendChild(opt);
     });
     pokemonSetsLoaded = true;
-  } catch {
-    // Silently fail - sets filter just won't be populated
-  }
+  } catch { /* sets filter unavailable */ }
 }
 
 async function searchPokemonCards() {
@@ -419,6 +480,14 @@ async function searchPokemonCards() {
 
   try {
     const cards = await CardAPI.searchPokemon(query, setFilter);
+    searchResultCache.pokemon = cards.map(card => ({
+      name: card.name,
+      set: card.set,
+      number: card.number,
+      rarity: card.rarity,
+      imageUrl: card.imageUrl,
+      value: CardAPI.getBestPokemonPrice(card.prices) || 0,
+    }));
 
     if (cards.length === 0) {
       statusEl.innerHTML = '<span class="text-warning">No cards found. Try a different search.</span>';
@@ -427,7 +496,7 @@ async function searchPokemonCards() {
 
     statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s)</span>`;
 
-    resultsEl.innerHTML = cards.map(card => {
+    resultsEl.innerHTML = cards.map((card, i) => {
       const price = CardAPI.getBestPokemonPrice(card.prices);
       const priceDisplay = price ? formatCurrency(price) : 'N/A';
 
@@ -443,16 +512,9 @@ async function searchPokemonCards() {
               <div class="text-muted small">${escapeHtml(card.set)} #${escapeHtml(card.number)}</div>
               ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
               <div class="price-tag">${priceDisplay}</div>
-              <button class="btn btn-sm btn-outline-warning mt-2 w-100"
-                      onclick='addFromSearch("pokemon", ${escapeJsonAttr(JSON.stringify({
-                        name: card.name,
-                        set: card.set,
-                        number: card.number,
-                        rarity: card.rarity,
-                        imageUrl: card.imageUrl,
-                        value: price || 0
-                      }))})'>
-                <i class="bi bi-plus-lg me-1"></i>Add to Collection
+              <button class="btn btn-sm btn-outline-warning mt-2 w-100 btn-add-to-collection"
+                      data-search-add="${i}" data-search-cat="pokemon">
+                <i class="bi bi-plus-lg me-1"></i>Add
               </button>
             </div>
           </div>
@@ -464,7 +526,7 @@ async function searchPokemonCards() {
   }
 }
 
-// Allow Enter key to trigger search
+document.getElementById('btn-search-pokemon').addEventListener('click', searchPokemonCards);
 document.getElementById('pokemon-search-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') searchPokemonCards();
 });
@@ -482,11 +544,19 @@ async function searchOnePieceCards() {
 
   try {
     const cards = await CardAPI.searchOnePiece(query);
+    searchResultCache.onepiece = cards.map(card => ({
+      name: card.name,
+      set: card.set || '',
+      number: card.number || '',
+      rarity: card.rarity || '',
+      imageUrl: card.imageUrl || '',
+      value: 0,
+    }));
 
     if (cards.length === 0) {
       statusEl.innerHTML = `
-        <span class="text-warning">No results from API. You can manually add One Piece cards to your collection.</span>
-        <button class="btn btn-sm btn-outline-danger ms-2" onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
+        <span class="text-warning">No results from API. You can add One Piece cards manually.</span>
+        <button class="btn btn-sm btn-outline-danger ms-2" data-manual-add="onepiece" data-manual-name="${escapeAttr(query)}">
           <i class="bi bi-plus-lg me-1"></i>Add Manually
         </button>
       `;
@@ -495,7 +565,7 @@ async function searchOnePieceCards() {
 
     statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s)</span>`;
 
-    resultsEl.innerHTML = cards.map(card => `
+    resultsEl.innerHTML = cards.map((card, i) => `
       <div class="col-6 col-md-4 col-lg-3 col-xl-2">
         <div class="search-card">
           ${card.imageUrl
@@ -506,16 +576,9 @@ async function searchOnePieceCards() {
             <div class="fw-bold text-truncate" title="${escapeAttr(card.name)}">${escapeHtml(card.name)}</div>
             <div class="text-muted small">${escapeHtml(card.set || '')} ${card.number ? '#' + escapeHtml(card.number) : ''}</div>
             ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
-            <button class="btn btn-sm btn-outline-danger mt-2 w-100"
-                    onclick='addFromSearch("onepiece", ${escapeJsonAttr(JSON.stringify({
-                      name: card.name,
-                      set: card.set || '',
-                      number: card.number || '',
-                      rarity: card.rarity || '',
-                      imageUrl: card.imageUrl || '',
-                      value: 0
-                    }))})'>
-              <i class="bi bi-plus-lg me-1"></i>Add to Collection
+            <button class="btn btn-sm btn-outline-danger mt-2 w-100 btn-add-to-collection"
+                    data-search-add="${i}" data-search-cat="onepiece">
+              <i class="bi bi-plus-lg me-1"></i>Add
             </button>
           </div>
         </div>
@@ -523,14 +586,15 @@ async function searchOnePieceCards() {
     `).join('');
   } catch {
     statusEl.innerHTML = `
-      <span class="text-warning">API unavailable. You can add One Piece cards manually.</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
+      <span class="text-warning">API unavailable. Add One Piece cards manually.</span>
+      <button class="btn btn-sm btn-outline-danger ms-2" data-manual-add="onepiece" data-manual-name="${escapeAttr(query)}">
         <i class="bi bi-plus-lg me-1"></i>Add Manually
       </button>
     `;
   }
 }
 
+document.getElementById('btn-search-onepiece').addEventListener('click', searchOnePieceCards);
 document.getElementById('onepiece-search-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') searchOnePieceCards();
 });
@@ -544,11 +608,19 @@ function searchInvincibleCards() {
   const resultsEl = document.getElementById('invincible-search-results');
 
   const cards = CardAPI.searchInvincible(query);
+  searchResultCache.invincible = cards.map(card => ({
+    name: card.name,
+    set: card.set,
+    number: '',
+    rarity: card.rarity,
+    imageUrl: card.imageUrl || '',
+    value: card.estimatedValue || 0,
+  }));
 
   if (cards.length === 0) {
     statusEl.innerHTML = `
-      <span class="text-warning">No matches in reference list. Invincible TCG is very new - add your card manually.</span>
-      <button class="btn btn-sm btn-outline-info ms-2" onclick="openAddCardModal('invincible', { name: '${escapeAttr(query)}' })">
+      <span class="text-warning">No matches found. Invincible TCG is very new - add your card manually.</span>
+      <button class="btn btn-sm btn-outline-info ms-2" data-manual-add="invincible" data-manual-name="${escapeAttr(query)}">
         <i class="bi bi-plus-lg me-1"></i>Add Manually
       </button>
     `;
@@ -558,7 +630,7 @@ function searchInvincibleCards() {
 
   statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s) in reference list</span>`;
 
-  resultsEl.innerHTML = cards.map(card => `
+  resultsEl.innerHTML = cards.map((card, i) => `
     <div class="col-6 col-md-4 col-lg-3 col-xl-2">
       <div class="search-card">
         ${card.imageUrl
@@ -570,16 +642,9 @@ function searchInvincibleCards() {
           <div class="text-muted small">${escapeHtml(card.set)}</div>
           ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
           <div class="price-tag">${card.estimatedValue ? formatCurrency(card.estimatedValue) : 'N/A'}</div>
-          <button class="btn btn-sm btn-outline-info mt-2 w-100"
-                  onclick='addFromSearch("invincible", ${escapeJsonAttr(JSON.stringify({
-                    name: card.name,
-                    set: card.set,
-                    number: '',
-                    rarity: card.rarity,
-                    imageUrl: card.imageUrl || '',
-                    value: card.estimatedValue || 0
-                  }))})'>
-            <i class="bi bi-plus-lg me-1"></i>Add to Collection
+          <button class="btn btn-sm btn-outline-info mt-2 w-100 btn-add-to-collection"
+                  data-search-add="${i}" data-search-cat="invincible">
+            <i class="bi bi-plus-lg me-1"></i>Add
           </button>
         </div>
       </div>
@@ -587,14 +652,50 @@ function searchInvincibleCards() {
   `).join('');
 }
 
+document.getElementById('btn-search-invincible').addEventListener('click', searchInvincibleCards);
 document.getElementById('invincible-search-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') searchInvincibleCards();
 });
 
-// === Add from Search Results ===
-function addFromSearch(category, cardData) {
-  openAddCardModal(category, cardData);
-}
+// === Settings: Export / Import / Clear ===
+document.getElementById('btn-export').addEventListener('click', () => {
+  const data = Storage.exportData();
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cardvault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  const fileInput = document.getElementById('import-file');
+  const file = fileInput.files[0];
+  if (!file) { alert('Please select a JSON file first.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      Storage.importData(e.target.result);
+      alert('Collection imported successfully!');
+      refreshDashboard();
+    } catch {
+      alert('Invalid file format. Please use a Card Vault export file.');
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+  if (confirm('Are you sure you want to delete ALL your card data? This cannot be undone!')) {
+    if (confirm('Really? This will permanently erase your entire collection.')) {
+      localStorage.removeItem('cardvault_collection');
+      refreshDashboard();
+      alert('All data cleared.');
+    }
+  }
+});
 
 // === Utility Functions ===
 function formatCurrency(amount) {
@@ -616,11 +717,7 @@ function escapeHtml(str) {
 
 function escapeAttr(str) {
   if (!str) return '';
-  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeJsonAttr(jsonStr) {
-  return jsonStr.replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function getRarityClass(rarity) {
@@ -639,21 +736,21 @@ function getRarityClass(rarity) {
 }
 
 function getCategoryIcon(category) {
-  switch (category) {
-    case 'pokemon': return '<i class="bi bi-lightning-fill text-warning me-1"></i>';
-    case 'onepiece': return '<i class="bi bi-tsunami text-danger me-1"></i>';
-    case 'invincible': return '<i class="bi bi-shield-fill text-info me-1"></i>';
-    default: return '';
-  }
+  const icons = {
+    pokemon: '<i class="bi bi-lightning-fill text-warning me-1"></i>',
+    onepiece: '<i class="bi bi-tsunami text-danger me-1"></i>',
+    invincible: '<i class="bi bi-shield-fill text-info me-1"></i>',
+  };
+  return icons[category] || '';
 }
 
 function getCategoryBadge(category) {
-  switch (category) {
-    case 'pokemon': return '<span class="badge bg-warning text-dark">Pokemon</span>';
-    case 'onepiece': return '<span class="badge bg-danger">One Piece</span>';
-    case 'invincible': return '<span class="badge bg-info">Invincible</span>';
-    default: return '';
-  }
+  const badges = {
+    pokemon: '<span class="badge bg-warning text-dark">Pokemon</span>',
+    onepiece: '<span class="badge bg-danger">One Piece</span>',
+    invincible: '<span class="badge bg-info">Invincible</span>',
+  };
+  return badges[category] || '';
 }
 
 // === Init ===

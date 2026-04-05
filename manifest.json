@@ -1,0 +1,17 @@
+{
+  "name": "Card Vault - Trading Card Tracker",
+  "short_name": "Card Vault",
+  "description": "Track your Pokemon, One Piece, and Invincible trading card collections with values and portfolio insights.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a1a2e'/><text x='50' y='62' font-size='50' text-anchor='middle' fill='%23a855f7'>CV</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
