@@ -386,6 +386,70 @@ function confirmDeleteCard(category, cardId) {
   }, 300);
 }
 
+// === Shared Search Results Renderer ===
+// Renders an array of API card objects into a results container.
+// category: 'pokemon' | 'onepiece' | 'invincible'
+function renderSearchResults(cards, category) {
+  const resultsEl = document.getElementById(category + '-search-results');
+  if (!resultsEl) return;
+
+  const btnClass = { pokemon: 'warning', onepiece: 'danger', invincible: 'info' }[category] || 'primary';
+  const noImageIcon = {
+    pokemon: 'bi-lightning-fill',
+    onepiece: 'bi-tsunami',
+    invincible: 'bi-shield-fill'
+  }[category] || 'bi-image';
+
+  resultsEl.innerHTML = cards.map(card => {
+    // Resolve best price across all three game types
+    let price = null;
+    if (category === 'pokemon') {
+      price = CardAPI.getBestPokemonPrice(card.prices);
+    } else if (category === 'onepiece') {
+      price = CardAPI.getBestOnePiecePrice(card.prices);
+    } else if (category === 'invincible') {
+      price = CardAPI.getBestInvinciblePrice(card.prices);
+    }
+    const priceDisplay = price != null ? formatCurrency(price) : 'N/A';
+
+    // Note badge for Invincible estimated prices
+    const noteBadge = card.note
+      ? `<div class="text-muted" style="font-size:0.65rem;">est. price</div>`
+      : '';
+
+    const addPayload = {
+      name: card.name,
+      set: card.set || '',
+      number: card.number || '',
+      rarity: card.rarity || '',
+      imageUrl: card.imageUrl || '',
+      value: price || 0
+    };
+
+    return `
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+        <div class="search-card">
+          ${card.imageUrl
+            ? `<img src="${escapeAttr(card.imageUrl)}" class="card-img-top" alt="${escapeAttr(card.name)}" loading="lazy">`
+            : `<div class="no-image"><i class="bi ${noImageIcon}"></i></div>`
+          }
+          <div class="card-body">
+            <div class="fw-bold text-truncate" title="${escapeAttr(card.name)}">${escapeHtml(card.name)}</div>
+            <div class="text-muted small">${escapeHtml(card.set || '')}${card.number ? ' #' + escapeHtml(card.number) : ''}</div>
+            ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
+            <div class="price-tag">${priceDisplay}</div>
+            ${noteBadge}
+            <button class="btn btn-sm btn-outline-${btnClass} mt-2 w-100"
+                    onclick='addFromSearch("${category}", ${escapeJsonAttr(JSON.stringify(addPayload))})'>
+              <i class="bi bi-plus-lg me-1"></i>Add to Collection
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // === Card Lookup - Pokemon ===
 let pokemonSetsLoaded = false;
 
@@ -402,7 +466,7 @@ async function loadPokemonSets() {
     });
     pokemonSetsLoaded = true;
   } catch {
-    // Silently fail - sets filter just won't be populated
+    // Silently fail - filter just won't be populated
   }
 }
 
@@ -426,50 +490,60 @@ async function searchPokemonCards() {
     }
 
     statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s)</span>`;
-
-    resultsEl.innerHTML = cards.map(card => {
-      const price = CardAPI.getBestPokemonPrice(card.prices);
-      const priceDisplay = price ? formatCurrency(price) : 'N/A';
-
-      return `
-        <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-          <div class="search-card">
-            ${card.imageUrl
-              ? `<img src="${escapeAttr(card.imageUrl)}" class="card-img-top" alt="${escapeAttr(card.name)}" loading="lazy">`
-              : `<div class="no-image"><i class="bi bi-image"></i></div>`
-            }
-            <div class="card-body">
-              <div class="fw-bold text-truncate" title="${escapeAttr(card.name)}">${escapeHtml(card.name)}</div>
-              <div class="text-muted small">${escapeHtml(card.set)} #${escapeHtml(card.number)}</div>
-              ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
-              <div class="price-tag">${priceDisplay}</div>
-              <button class="btn btn-sm btn-outline-warning mt-2 w-100"
-                      onclick='addFromSearch("pokemon", ${escapeJsonAttr(JSON.stringify({
-                        name: card.name,
-                        set: card.set,
-                        number: card.number,
-                        rarity: card.rarity,
-                        imageUrl: card.imageUrl,
-                        value: price || 0
-                      }))})'>
-                <i class="bi bi-plus-lg me-1"></i>Add to Collection
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+    renderSearchResults(cards, 'pokemon');
   } catch {
     statusEl.innerHTML = '<span class="text-danger">Search failed. Please try again.</span>';
   }
 }
 
-// Allow Enter key to trigger search
+// Browse every card in the selected Pokemon set
+async function browsePokemonSet() {
+  const setId = document.getElementById('pokemon-set-filter').value;
+  if (!setId) {
+    document.getElementById('pokemon-search-status').innerHTML =
+      '<span class="text-warning">Please select a set from the dropdown first.</span>';
+    return;
+  }
+
+  const statusEl = document.getElementById('pokemon-search-status');
+  const resultsEl = document.getElementById('pokemon-search-results');
+
+  statusEl.innerHTML = '<div class="spinner-border text-warning spinner-border-sm me-2" role="status"></div>Loading full set...';
+  resultsEl.innerHTML = '';
+
+  try {
+    const cards = await CardAPI.getPokemonSet(setId);
+    statusEl.innerHTML = `<span class="text-success">${cards.length} cards in set</span>`;
+    renderSearchResults(cards, 'pokemon');
+  } catch {
+    statusEl.innerHTML = '<span class="text-danger">Failed to load set. Please try again.</span>';
+  }
+}
+
 document.getElementById('pokemon-search-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') searchPokemonCards();
 });
 
 // === Card Lookup - One Piece ===
+let onePieceSetsLoaded = false;
+
+async function loadOnePieceSets() {
+  if (onePieceSetsLoaded) return;
+  try {
+    const sets = await CardAPI.getOnePieceSets();
+    const select = document.getElementById('onepiece-set-filter');
+    sets.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      select.appendChild(opt);
+    });
+    onePieceSetsLoaded = true;
+  } catch {
+    // Silently fail
+  }
+}
+
 async function searchOnePieceCards() {
   const query = document.getElementById('onepiece-search-input').value.trim();
   if (!query) return;
@@ -477,7 +551,7 @@ async function searchOnePieceCards() {
   const statusEl = document.getElementById('onepiece-search-status');
   const resultsEl = document.getElementById('onepiece-search-results');
 
-  statusEl.innerHTML = '<span class="spinner-search me-2"></span>Searching...';
+  statusEl.innerHTML = '<div class="spinner-border text-danger spinner-border-sm me-2" role="status"></div>Searching...';
   resultsEl.innerHTML = '';
 
   try {
@@ -485,8 +559,9 @@ async function searchOnePieceCards() {
 
     if (cards.length === 0) {
       statusEl.innerHTML = `
-        <span class="text-warning">No results from API. You can manually add One Piece cards to your collection.</span>
-        <button class="btn btn-sm btn-outline-danger ms-2" onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
+        <span class="text-warning">No results found. You can add this card manually.</span>
+        <button class="btn btn-sm btn-outline-danger ms-2"
+                onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
           <i class="bi bi-plus-lg me-1"></i>Add Manually
         </button>
       `;
@@ -494,40 +569,44 @@ async function searchOnePieceCards() {
     }
 
     statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s)</span>`;
-
-    resultsEl.innerHTML = cards.map(card => `
-      <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-        <div class="search-card">
-          ${card.imageUrl
-            ? `<img src="${escapeAttr(card.imageUrl)}" class="card-img-top" alt="${escapeAttr(card.name)}" loading="lazy">`
-            : `<div class="no-image"><i class="bi bi-image"></i></div>`
-          }
-          <div class="card-body">
-            <div class="fw-bold text-truncate" title="${escapeAttr(card.name)}">${escapeHtml(card.name)}</div>
-            <div class="text-muted small">${escapeHtml(card.set || '')} ${card.number ? '#' + escapeHtml(card.number) : ''}</div>
-            ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
-            <button class="btn btn-sm btn-outline-danger mt-2 w-100"
-                    onclick='addFromSearch("onepiece", ${escapeJsonAttr(JSON.stringify({
-                      name: card.name,
-                      set: card.set || '',
-                      number: card.number || '',
-                      rarity: card.rarity || '',
-                      imageUrl: card.imageUrl || '',
-                      value: 0
-                    }))})'>
-              <i class="bi bi-plus-lg me-1"></i>Add to Collection
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join('');
+    renderSearchResults(cards, 'onepiece');
   } catch {
     statusEl.innerHTML = `
-      <span class="text-warning">API unavailable. You can add One Piece cards manually.</span>
-      <button class="btn btn-sm btn-outline-danger ms-2" onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
+      <span class="text-warning">Search failed. You can add this card manually.</span>
+      <button class="btn btn-sm btn-outline-danger ms-2"
+              onclick="openAddCardModal('onepiece', { name: '${escapeAttr(query)}' })">
         <i class="bi bi-plus-lg me-1"></i>Add Manually
       </button>
     `;
+  }
+}
+
+// Browse every card in the selected One Piece set
+async function browseOnePieceSet() {
+  const groupId = document.getElementById('onepiece-set-filter').value;
+  if (!groupId) {
+    document.getElementById('onepiece-search-status').innerHTML =
+      '<span class="text-warning">Please select a set from the dropdown first.</span>';
+    return;
+  }
+
+  const statusEl = document.getElementById('onepiece-search-status');
+  const resultsEl = document.getElementById('onepiece-search-results');
+
+  statusEl.innerHTML = '<div class="spinner-border text-danger spinner-border-sm me-2" role="status"></div>Loading full set...';
+  resultsEl.innerHTML = '';
+
+  try {
+    const cards = await CardAPI.getOnePieceSet(groupId);
+
+    // Stamp the set name onto each card so it shows in the result card
+    const setName = document.getElementById('onepiece-set-filter').selectedOptions[0]?.text || '';
+    cards.forEach(c => { if (!c.set) c.set = setName; });
+
+    statusEl.innerHTML = `<span class="text-success">${cards.length} cards in set</span>`;
+    renderSearchResults(cards, 'onepiece');
+  } catch {
+    statusEl.innerHTML = '<span class="text-danger">Failed to load set. Please try again.</span>';
   }
 }
 
@@ -536,6 +615,17 @@ document.getElementById('onepiece-search-input').addEventListener('keydown', (e)
 });
 
 // === Card Lookup - Invincible ===
+function loadInvincibleSets() {
+  const sets = CardAPI.getInvincibleSets();
+  const select = document.getElementById('invincible-set-filter');
+  sets.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.name;
+    select.appendChild(opt);
+  });
+}
+
 function searchInvincibleCards() {
   const query = document.getElementById('invincible-search-input').value.trim();
   if (!query) return;
@@ -547,8 +637,9 @@ function searchInvincibleCards() {
 
   if (cards.length === 0) {
     statusEl.innerHTML = `
-      <span class="text-warning">No matches in reference list. Invincible TCG is very new - add your card manually.</span>
-      <button class="btn btn-sm btn-outline-info ms-2" onclick="openAddCardModal('invincible', { name: '${escapeAttr(query)}' })">
+      <span class="text-warning">No matches found. Invincible TCG is very new — add your card manually.</span>
+      <button class="btn btn-sm btn-outline-info ms-2"
+              onclick="openAddCardModal('invincible', { name: '${escapeAttr(query)}' })">
         <i class="bi bi-plus-lg me-1"></i>Add Manually
       </button>
     `;
@@ -557,34 +648,24 @@ function searchInvincibleCards() {
   }
 
   statusEl.innerHTML = `<span class="text-success">Found ${cards.length} card(s) in reference list</span>`;
+  renderSearchResults(cards, 'invincible');
+}
 
-  resultsEl.innerHTML = cards.map(card => `
-    <div class="col-6 col-md-4 col-lg-3 col-xl-2">
-      <div class="search-card">
-        ${card.imageUrl
-          ? `<img src="${escapeAttr(card.imageUrl)}" class="card-img-top" alt="${escapeAttr(card.name)}" loading="lazy">`
-          : `<div class="no-image"><i class="bi bi-shield-fill" style="color:#00b4d8;"></i></div>`
-        }
-        <div class="card-body">
-          <div class="fw-bold text-truncate" title="${escapeAttr(card.name)}">${escapeHtml(card.name)}</div>
-          <div class="text-muted small">${escapeHtml(card.set)}</div>
-          ${card.rarity ? `<span class="badge badge-rarity ${getRarityClass(card.rarity)} mb-1">${escapeHtml(card.rarity)}</span>` : ''}
-          <div class="price-tag">${card.estimatedValue ? formatCurrency(card.estimatedValue) : 'N/A'}</div>
-          <button class="btn btn-sm btn-outline-info mt-2 w-100"
-                  onclick='addFromSearch("invincible", ${escapeJsonAttr(JSON.stringify({
-                    name: card.name,
-                    set: card.set,
-                    number: '',
-                    rarity: card.rarity,
-                    imageUrl: card.imageUrl || '',
-                    value: card.estimatedValue || 0
-                  }))})'>
-            <i class="bi bi-plus-lg me-1"></i>Add to Collection
-          </button>
-        </div>
-      </div>
-    </div>
-  `).join('');
+// Browse every card in the selected Invincible set
+function browseInvincibleSet() {
+  const setId = document.getElementById('invincible-set-filter').value;
+  if (!setId) {
+    document.getElementById('invincible-search-status').innerHTML =
+      '<span class="text-warning">Please select a set from the dropdown first.</span>';
+    return;
+  }
+
+  const statusEl = document.getElementById('invincible-search-status');
+  const resultsEl = document.getElementById('invincible-search-results');
+
+  const cards = CardAPI.getInvincibleSet(setId);
+  statusEl.innerHTML = `<span class="text-success">${cards.length} cards in set <span class="text-muted">(estimated prices)</span></span>`;
+  renderSearchResults(cards, 'invincible');
 }
 
 document.getElementById('invincible-search-input').addEventListener('keydown', (e) => {
@@ -631,6 +712,8 @@ function getRarityClass(rarity) {
   if (r.includes('full art')) return 'rarity-full';
   if (r.includes('alt art') || r.includes('alternate')) return 'rarity-alt';
   if (r.includes('special')) return 'rarity-special';
+  if (r.includes('gold')) return 'rarity-ultra';
+  if (r.includes('silver')) return 'rarity-holo';
   if (r.includes('holo')) return 'rarity-holo';
   if (r.includes('rare')) return 'rarity-rare';
   if (r.includes('uncommon')) return 'rarity-uncommon';
@@ -660,4 +743,6 @@ function getCategoryBadge(category) {
 document.addEventListener('DOMContentLoaded', () => {
   refreshDashboard();
   loadPokemonSets();
+  loadOnePieceSets();
+  loadInvincibleSets();
 });
