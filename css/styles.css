@@ -1,0 +1,306 @@
+/* === Base Theme === */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --accent-pokemon: #f0c040;
+  --accent-onepiece: #e74c3c;
+  --accent-invincible: #00b4d8;
+  --accent-total: #a855f7;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: #e0e0e0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
+
+/* === Navbar === */
+.navbar {
+  background: var(--bg-secondary) !important;
+}
+
+.navbar-brand {
+  font-size: 1.4rem;
+  color: var(--accent-total) !important;
+}
+
+.nav-link {
+  transition: color 0.2s, border-bottom 0.2s;
+  padding-bottom: 0.5rem;
+}
+
+.nav-link.active {
+  border-bottom: 2px solid var(--accent-total);
+}
+
+/* === Stat Cards === */
+.stat-card {
+  border: none;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.bg-gradient-total {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+}
+
+.bg-gradient-pokemon {
+  background: linear-gradient(135deg, #d97706, #f0c040) !important;
+}
+
+.bg-gradient-onepiece {
+  background: linear-gradient(135deg, #b91c1c, #ef4444) !important;
+}
+
+.bg-gradient-invincible {
+  background: linear-gradient(135deg, #0369a1, #00b4d8) !important;
+}
+
+/* === Cards === */
+.card {
+  background: var(--bg-secondary);
+  border-color: #2a2a4a;
+}
+
+.card-header {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* === Collection Cards === */
+.collection-card {
+  background: var(--bg-secondary);
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.collection-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.collection-card .card-img-top {
+  height: 200px;
+  object-fit: contain;
+  background: #0a0a1a;
+  padding: 10px;
+}
+
+.collection-card .card-body {
+  padding: 0.75rem;
+}
+
+.collection-card .card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collection-card .card-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.collection-card .card-meta {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* === Search Result Cards === */
+.search-card {
+  background: var(--bg-secondary);
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.search-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.search-card .card-img-top {
+  height: 250px;
+  object-fit: contain;
+  background: #0a0a1a;
+  padding: 10px;
+}
+
+.search-card .card-body {
+  padding: 0.75rem;
+}
+
+.search-card .price-tag {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+/* === Lookup Tabs === */
+#lookupTabs .nav-link {
+  color: #aaa;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+}
+
+#lookupTabs .nav-link.active {
+  color: #fff;
+  background: transparent;
+  border-bottom: 2px solid var(--accent-total);
+}
+
+#lookupTabs .nav-link:hover {
+  color: #fff;
+}
+
+/* === Badges === */
+.badge-rarity {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.rarity-common { background: #6b7280; }
+.rarity-uncommon { background: #059669; }
+.rarity-rare { background: #2563eb; }
+.rarity-holo { background: #7c3aed; }
+.rarity-ultra { background: #dc2626; }
+.rarity-secret { background: #d97706; }
+.rarity-alt { background: #ec4899; }
+.rarity-full { background: #8b5cf6; }
+.rarity-special { background: #f43f5e; }
+.rarity-promo { background: #14b8a6; }
+
+/* === Profit/Loss Indicators === */
+.profit { color: #4ade80; }
+.loss { color: #f87171; }
+.neutral { color: #9ca3af; }
+
+/* === Top Cards List === */
+.top-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.top-card-item:last-child {
+  border-bottom: none;
+}
+
+/* === Empty State === */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+/* === Loading Spinner === */
+.spinner-search {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === Form Focus === */
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.25);
+  border-color: var(--accent-total);
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .stat-card .card-title {
+    font-size: 1.3rem;
+  }
+
+  .collection-card .card-img-top {
+    height: 150px;
+  }
+
+  .search-card .card-img-top {
+    height: 180px;
+  }
+}
+
+/* === Card detail modal === */
+.detail-img {
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.detail-info {
+  text-align: left;
+}
+
+.detail-info dt {
+  color: #aaa;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.detail-info dd {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+/* === No image placeholder === */
+.no-image {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a1a;
+  color: #444;
+  font-size: 3rem;
+}
+
+.search-card .no-image {
+  height: 250px;
+}
