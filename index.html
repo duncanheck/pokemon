@@ -246,20 +246,27 @@
 
       <!-- Pokemon Lookup -->
       <div id="lookup-pokemon-lookup" class="lookup-content">
-        <div class="row mb-4">
-          <div class="col-md-6">
+        <div class="row g-2 mb-4 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label text-muted small mb-1">Search by name</label>
             <div class="input-group">
               <input type="text" class="form-control bg-dark text-white border-secondary"
-                     id="pokemon-search-input" placeholder="Search Pokemon cards (e.g. Charizard, Pikachu)...">
+                     id="pokemon-search-input" placeholder="e.g. Charizard, Pikachu...">
               <button class="btn btn-warning" onclick="searchPokemonCards()">
                 <i class="bi bi-search me-1"></i>Search
               </button>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-4">
+            <label class="form-label text-muted small mb-1">Or browse a full set</label>
             <select class="form-select bg-dark text-white border-secondary" id="pokemon-set-filter">
-              <option value="">All Sets</option>
+              <option value="">Select a set...</option>
             </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-warning w-100" onclick="browsePokemonSet()">
+              <i class="bi bi-collection me-1"></i>Browse Set
+            </button>
           </div>
         </div>
         <div id="pokemon-search-status" class="mb-3"></div>
@@ -268,15 +275,27 @@
 
       <!-- One Piece Lookup -->
       <div id="lookup-onepiece-lookup" class="lookup-content d-none">
-        <div class="row mb-4">
-          <div class="col-md-6">
+        <div class="row g-2 mb-4 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label text-muted small mb-1">Search by name</label>
             <div class="input-group">
               <input type="text" class="form-control bg-dark text-white border-secondary"
-                     id="onepiece-search-input" placeholder="Search One Piece cards...">
+                     id="onepiece-search-input" placeholder="e.g. Luffy, Zoro, Nami...">
               <button class="btn btn-danger" onclick="searchOnePieceCards()">
                 <i class="bi bi-search me-1"></i>Search
               </button>
             </div>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label text-muted small mb-1">Or browse a full set</label>
+            <select class="form-select bg-dark text-white border-secondary" id="onepiece-set-filter">
+              <option value="">Select a set...</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-danger w-100" onclick="browseOnePieceSet()">
+              <i class="bi bi-collection me-1"></i>Browse Set
+            </button>
           </div>
         </div>
         <div id="onepiece-search-status" class="mb-3"></div>
@@ -285,20 +304,33 @@
 
       <!-- Invincible Lookup -->
       <div id="lookup-invincible-lookup" class="lookup-content d-none">
-        <div class="row mb-4">
-          <div class="col-md-6">
+        <div class="row g-2 mb-4 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label text-muted small mb-1">Search by name</label>
             <div class="input-group">
               <input type="text" class="form-control bg-dark text-white border-secondary"
-                     id="invincible-search-input" placeholder="Search Invincible cards...">
+                     id="invincible-search-input" placeholder="e.g. Invincible, Omni-Man...">
               <button class="btn btn-info" onclick="searchInvincibleCards()">
                 <i class="bi bi-search me-1"></i>Search
               </button>
             </div>
           </div>
+          <div class="col-md-4">
+            <label class="form-label text-muted small mb-1">Or browse a full set</label>
+            <select class="form-select bg-dark text-white border-secondary" id="invincible-set-filter">
+              <option value="">Select a set...</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-outline-info w-100" onclick="browseInvincibleSet()">
+              <i class="bi bi-collection me-1"></i>Browse Set
+            </button>
+          </div>
         </div>
         <div id="invincible-search-status" class="mb-3"></div>
         <div class="row g-3" id="invincible-search-results"></div>
       </div>
+
     </div>
 
   </div>
@@ -346,6 +378,8 @@
                   <option value="Full Art">Full Art</option>
                   <option value="Special Art">Special Art</option>
                   <option value="Promo">Promo</option>
+                  <option value="Silver Parallel">Silver Parallel</option>
+                  <option value="Gold Parallel">Gold Parallel</option>
                 </select>
               </div>
               <div class="col-md-4">
