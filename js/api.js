@@ -128,98 +128,269 @@ const CardAPI = (() => {
   }
 
 
-  // ─────────────────────────────────────────────
-  // ONE PIECE TCG  (TCGCSV → TCGplayer, no auth)
-  // categoryId = 68
-  // ─────────────────────────────────────────────
-  const TCGCSV_BASE = 'https://tcgcsv.com/tcgplayer';
-  const ONEPIECE_CATEGORY = 68;
+  // ═════════════════════════════════════════════════════════════════
+// FIXED ONE PIECE TCG INTEGRATION
+// ═════════════════════════════════════════════════════════════════
 
-  // List all One Piece sets (groups)
-  async function getOnePieceSets() {
-    const response = await fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/groups`);
-    if (!response.ok) throw new Error('Failed to fetch One Piece sets');
-    const data = await response.json();
-    return (data.results || []).map(g => ({
-      id: g.groupId,
-      name: g.name,
-      abbreviation: g.abbreviation || '',
-      publishedOn: g.publishedOn || '',
-    }));
+const TCGCSV_BASE = 'https://tcgcsv.com/tcgplayer';
+const ONEPIECE_CATEGORY = 68;
+
+// ─────────────────────────────────────────────
+// API FUNCTIONS
+// ─────────────────────────────────────────────
+
+// List all One Piece sets (groups)
+async function getOnePieceSets() {
+  const response = await fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/groups`);
+  if (!response.ok) throw new Error('Failed to fetch One Piece sets');
+  const data = await response.json();
+  return (data.results || []).map(g => ({
+    id: g.groupId,
+    name: g.name,
+    abbreviation: g.abbreviation || '',
+    publishedOn: g.publishedOn || '',
+  }));
+}
+
+// Fetch all cards + prices for a specific set in one go
+async function getOnePieceSet(groupId) {
+  const [productsRes, pricesRes] = await Promise.all([
+    fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/${groupId}/products`),
+    fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/${groupId}/prices`),
+  ]);
+  if (!productsRes.ok) throw new Error(`Failed to fetch One Piece set ${groupId}`);
+  if (!pricesRes.ok) throw new Error(`Failed to fetch One Piece prices for set ${groupId}`);
+  
+  const [productsData, pricesData] = await Promise.all([
+    productsRes.json(),
+    pricesRes.json(),
+  ]);
+  
+  // Build a price map keyed by productId
+  const priceMap = buildPriceMap(pricesData.results || []);
+  
+  // Filter to only actual cards (have a Rarity or Number in extendedData)
+  const cards = (productsData.results || []).filter(p => isCard(p));
+  return cards.map(p => mapOnePieceProduct(p, priceMap));
+}
+
+// Name search across all One Piece cards
+async function searchOnePiece(query) {
+  const sets = await getOnePieceSets();
+  if (!sets.length) return [];
+  const q = sanitizeQuery(query).toLowerCase();
+  
+  // Search the most recent 8 sets to keep it snappy
+  const recentSets = sets.slice(0, 8);
+  const results = await Promise.all(
+    recentSets.map(s => getOnePieceSet(s.id).catch(() => []))
+  );
+  
+  return results.flat().filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.number.toLowerCase().includes(q)
+  );
+}
+
+function mapOnePieceProduct(product, priceMap) {
+  const ext = parseExtendedData(product.extendedData || []);
+  const prices = priceMap[product.productId] || {};
+  
+  return {
+    apiId: String(product.productId),
+    name: product.name || '',
+    set: '',          // Will be filled by caller
+    setGroupId: product.groupId,
+    number: ext.Number || '',
+    rarity: ext.Rarity || '',
+    imageUrl: product.imageUrl
+      ? product.imageUrl.replace('_200w.jpg', '_400w.jpg')
+      : '',
+    color: ext.Color || '',
+    type: ext['Card Type'] || ext.Type || '',
+    cost: ext.Cost || '',
+    power: ext.Power || '',
+    counter: ext.Counter || '',
+    effect: ext['Card Text'] || ext.Effect || '',
+    attribute: ext.Attribute || '',
+    tcgplayerUrl: product.url || '',
+    prices,
+  };
+}
+
+function getBestOnePiecePrice(prices) {
+  if (!prices) return null;
+  // Prefer Normal, then Holofoil, then any available variant
+  for (const variant of ['Normal', 'Holofoil', ...Object.keys(prices)]) {
+    if (prices[variant]?.market != null) return prices[variant].market;
   }
+  return null;
+}
 
-  // Fetch all cards + prices for a specific set in one go
-  async function getOnePieceSet(groupId) {
-    const [productsRes, pricesRes] = await Promise.all([
-      fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/${groupId}/products`),
-      fetch(`${TCGCSV_BASE}/${ONEPIECE_CATEGORY}/${groupId}/prices`),
-    ]);
-    if (!productsRes.ok) throw new Error(`Failed to fetch One Piece set ${groupId}`);
-    if (!pricesRes.ok) throw new Error(`Failed to fetch One Piece prices for set ${groupId}`);
+// ─────────────────────────────────────────────
+// UI INTEGRATION FUNCTIONS
+// ─────────────────────────────────────────────
 
-    const [productsData, pricesData] = await Promise.all([
-      productsRes.json(),
-      pricesRes.json(),
-    ]);
-
-    // Build a price map keyed by productId
-    const priceMap = buildPriceMap(pricesData.results || []);
-
-    // Filter to only actual cards (have a Rarity or Number in extendedData)
-    const cards = (productsData.results || []).filter(p => isCard(p));
-    return cards.map(p => mapOnePieceProduct(p, priceMap));
-  }
-
-  // Name search across all One Piece cards — fetches sets first then searches by name
-  async function searchOnePiece(query) {
+// Load sets into the dropdown
+async function loadOnePieceSets() {
+  const setSelect = document.getElementById('onepiece-set-select');
+  if (!setSelect) return;
+  
+  try {
+    setSelect.innerHTML = '<option value="">Loading sets...</option>';
     const sets = await getOnePieceSets();
-    if (!sets.length) return [];
-    const q = sanitizeQuery(query).toLowerCase();
-
-    // Search the most recent 5 sets to keep it snappy; expand if needed
-    const recentSets = sets.slice(0, 5);
-    const results = await Promise.all(
-      recentSets.map(s => getOnePieceSet(s.id).catch(() => []))
-    );
-    return results.flat().filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.number.toLowerCase().includes(q)
-    );
+    
+    setSelect.innerHTML = '<option value="">Select a set</option>';
+    sets.forEach(set => {
+      const option = document.createElement('option');
+      option.value = set.id;
+      option.textContent = `${set.name}${set.publishedOn ? ' (' + set.publishedOn.split('T')[0] + ')' : ''}`;
+      setSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Failed to load One Piece sets:', error);
+    setSelect.innerHTML = '<option value="">Error loading sets</option>';
   }
+}
 
-  function mapOnePieceProduct(product, priceMap) {
-    const ext = parseExtendedData(product.extendedData || []);
-    const prices = priceMap[product.productId] || {};
-    return {
-      apiId: String(product.productId),
-      name: product.name || '',
-      set: '',          // Caller can fill from the set name they looked up
-      setGroupId: product.groupId,
-      number: ext.Number || '',
-      rarity: ext.Rarity || '',
-      imageUrl: product.imageUrl
-        ? product.imageUrl.replace('_200w.jpg', '_400w.jpg')
-        : '',
-      color: ext.Color || '',
-      type: ext['Card Type'] || ext.Type || '',
-      cost: ext.Cost || '',
-      power: ext.Power || '',
-      counter: ext.Counter || '',
-      effect: ext['Card Text'] || ext.Effect || '',
-      attribute: ext.Attribute || '',
-      tcgplayerUrl: product.url || '',
-      prices,
-    };
+// Handle set selection
+async function handleOnePieceSetSelect(groupId) {
+  if (!groupId) {
+    displayedCards = [];
+    renderCards();
+    return;
   }
+  
+  try {
+    showLoading(true);
+    const cards = await getOnePieceSet(groupId);
+    
+    // Get the set name from the dropdown
+    const setSelect = document.getElementById('onepiece-set-select');
+    const setName = setSelect?.options[setSelect.selectedIndex]?.text || '';
+    
+    // Add set name to each card
+    cards.forEach(card => {
+      card.set = setName;
+    });
+    
+    displayedCards = cards;
+    renderCards();
+  } catch (error) {
+    console.error('Failed to load One Piece set:', error);
+    alert('Failed to load set. Please try again.');
+  } finally {
+    showLoading(false);
+  }
+}
 
-  function getBestOnePiecePrice(prices) {
-    if (!prices) return null;
-    // Prefer Normal, then Holofoil, then any available variant
-    for (const variant of ['Normal', 'Holofoil', ...Object.keys(prices)]) {
-      if (prices[variant]?.market != null) return prices[variant].market;
+// Handle search
+async function handleOnePieceSearch(query) {
+  if (!query || query.trim().length < 2) {
+    alert('Please enter at least 2 characters to search');
+    return;
+  }
+  
+  try {
+    showLoading(true);
+    const cards = await searchOnePiece(query);
+    
+    // Get set names for the cards
+    const sets = await getOnePieceSets();
+    const setMap = {};
+    sets.forEach(s => {
+      setMap[s.id] = s.name;
+    });
+    
+    // Add set names to cards
+    cards.forEach(card => {
+      card.set = setMap[card.setGroupId] || '';
+    });
+    
+    displayedCards = cards;
+    renderCards();
+    
+    if (cards.length === 0) {
+      alert('No cards found for that search');
     }
-    return null;
+  } catch (error) {
+    console.error('Failed to search One Piece cards:', error);
+    alert('Search failed. Please try again.');
+  } finally {
+    showLoading(false);
   }
+}
+
+// ─────────────────────────────────────────────
+// EVENT LISTENERS (add these to your init function)
+// ─────────────────────────────────────────────
+
+// Add these inside your game-specific initialization when One Piece is selected:
+/*
+document.getElementById('onepiece-set-select')?.addEventListener('change', (e) => {
+  handleOnePieceSetSelect(e.target.value);
+});
+
+document.getElementById('onepiece-search-button')?.addEventListener('click', () => {
+  const searchInput = document.getElementById('onepiece-search-input');
+  if (searchInput) {
+    handleOnePieceSearch(searchInput.value);
+  }
+});
+
+document.getElementById('onepiece-search-input')?.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    handleOnePieceSearch(e.target.value);
+  }
+});
+
+// Load sets when One Piece game is selected
+loadOnePieceSets();
+*/
+
+// ═════════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS (make sure these exist in your main file)
+// ═════════════════════════════════════════════════════════════════
+
+function buildPriceMap(priceResults) {
+  const map = {};
+  priceResults.forEach(p => {
+    if (!map[p.productId]) map[p.productId] = {};
+    map[p.productId][p.subTypeName] = {
+      low: p.lowPrice,
+      mid: p.midPrice,
+      high: p.highPrice,
+      market: p.marketPrice,
+      direct: p.directLowPrice,
+    };
+  });
+  return map;
+}
+
+function parseExtendedData(extendedData) {
+  const result = {};
+  extendedData.forEach(item => {
+    result[item.name] = item.value;
+  });
+  return result;
+}
+
+function isCard(product) {
+  const ext = parseExtendedData(product.extendedData || []);
+  return ext.Rarity || ext.Number || ext['Card Type'];
+}
+
+function sanitizeQuery(query) {
+  return query.trim().replace(/[^\w\s-]/g, '');
+}
+
+function showLoading(show) {
+  // Implement your loading indicator
+  const loader = document.getElementById('loading-indicator');
+  if (loader) {
+    loader.style.display = show ? 'block' : 'none';
+  }
+}
 
 
   // ─────────────────────────────────────────────
