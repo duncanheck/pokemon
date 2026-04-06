@@ -194,6 +194,43 @@
         </div>
       </div>
 
+      <!-- Notifications panel -->
+      {% if notifications %}
+      <div class="col-12">
+        <div class="stat-card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-semibold mb-0">
+              <i class="bi bi-bell me-2 text-warning"></i>Alerts
+              {% if unread_count %}<span class="badge bg-danger ms-1">{{ unread_count }}</span>{% endif %}
+            </h6>
+            <button class="btn btn-link btn-sm text-muted p-0" id="markReadBtn">
+              Mark all read
+            </button>
+          </div>
+          <ul class="list-unstyled mb-0">
+            {% for n in notifications %}
+              <li class="d-flex align-items-start gap-2 py-2 border-bottom border-secondary
+                          {% if not n.is_read %}bg-opacity-10 bg-warning rounded-2 px-2{% endif %}">
+                <i class="bi
+                  {% if n.notif_type == 'price_surge' %}bi-graph-up-arrow text-success
+                  {% elif n.notif_type == 'price_drop' %}bi-graph-down-arrow text-info
+                  {% elif n.notif_type == 'offer_accepted' %}bi-check-circle text-success
+                  {% else %}bi-info-circle text-muted{% endif %}
+                  mt-1"></i>
+                <div class="flex-grow-1">
+                  <span class="small">{{ n.message }}</span>
+                  {% if n.link %}
+                    <a href="{{ n.link }}" class="small text-warning ms-1">View →</a>
+                  {% endif %}
+                  <div class="text-muted" style="font-size:.65rem">{{ n.created_at|timesince }} ago</div>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Portfolio value chart -->
       <div class="col-12">
         <div class="stat-card p-3">
@@ -206,10 +243,6 @@
             </a>
           </div>
           <canvas id="portfolioChart" height="80"></canvas>
-          <p class="text-muted mt-2 mb-0" style="font-size:.7rem">
-            Historical tracking starts once daily snapshots are enabled (Phase 5).
-            Showing placeholder trend.
-          </p>
         </div>
       </div>
 
@@ -221,18 +254,17 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+// Mark all read
+document.getElementById("markReadBtn")?.addEventListener("click", function() {
+  fetch("{% url 'notifications_read' %}", {
+    method: "POST",
+    headers: {"X-CSRFToken": "{{ csrf_token }}"},
+  }).then(() => location.reload());
+});
+
 (function() {
-  // Placeholder data — replaced by real snapshots in Phase 5
-  const labels = Array.from({length: 30}, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (29 - i));
-    return d.toLocaleDateString("en-US", {month:"short", day:"numeric"});
-  });
-  const base = parseFloat("{{ portfolio_value|default:'0' }}") || 100;
-  // Simulate slight fluctuation around current value
-  const data = labels.map((_, i) =>
-    +(base * (0.88 + 0.15 * (i / 29) + (Math.random() - 0.5) * 0.06)).toFixed(2)
-  );
-  data[data.length - 1] = base; // pin last point to real value
+  const labels = {{ chart_labels|safe }};
+  const data   = {{ chart_values|safe }};
 
   new Chart(document.getElementById("portfolioChart"), {
     type: "line",

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="mb-0 fw-bold"><i class="bi bi-trophy me-2 text-warning"></i>Leaderboard</h4>
+  {% if user.is_authenticated %}
+    <a href="/accounts/settings/" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-toggle-on me-1"></i>Opt in/out
+    </a>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+
+  <!-- Top by Portfolio Value -->
+  <div class="col-lg-6">
+    <div class="stat-card p-3 h-100">
+      <h6 class="fw-semibold mb-3">
+        <i class="bi bi-safe me-2 text-warning"></i>Highest Portfolio Value
+      </h6>
+      {% if top_value %}
+        <table class="table table-dark table-hover table-sm mb-0">
+          <thead>
+            <tr class="text-muted small border-secondary">
+              <th style="width:36px">#</th>
+              <th>Collector</th>
+              <th>Game</th>
+              <th class="text-end">Cards</th>
+              <th class="text-end">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in top_value %}
+              <tr {% if u == user %}class="table-warning"{% endif %}>
+                <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+                <td>
+                  <a href="{% url 'public_profile' u.username %}"
+                     class="text-decoration-none {% if u == user %}text-dark fw-bold{% else %}text-white{% endif %}">
+                    {% if u.avatar %}
+                      <img src="{{ u.avatar.url }}" width="22" height="22"
+                           class="rounded-circle me-1" alt="">
+                    {% else %}
+                      <i class="bi bi-person-circle me-1 text-muted"></i>
+                    {% endif %}
+                    {{ u.username }}
+                  </a>
+                </td>
+                <td>
+                  <span class="badge badge-tcg-{{ u.preferred_tcg }}"
+                        style="font-size:.6rem">{{ u.get_preferred_tcg_display }}</span>
+                </td>
+                <td class="text-end small text-muted">{{ u.total_cards }}</td>
+                <td class="text-end fw-bold text-warning">${{ u.total_collection_value|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted small mb-0">No data yet. Add cards to your collection to appear here.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Top by 30-day Growth -->
+  <div class="col-lg-6">
+    <div class="stat-card p-3 h-100">
+      <h6 class="fw-semibold mb-3">
+        <i class="bi bi-graph-up-arrow me-2 text-success"></i>Fastest Growing (30 days)
+      </h6>
+      {% if top_growth %}
+        <table class="table table-dark table-hover table-sm mb-0">
+          <thead>
+            <tr class="text-muted small border-secondary">
+              <th style="width:36px">#</th>
+              <th>Collector</th>
+              <th class="text-end">30d Growth</th>
+              <th class="text-end">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u, pct in top_growth %}
+              <tr {% if u == user %}class="table-warning"{% endif %}>
+                <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+                <td>
+                  <a href="{% url 'public_profile' u.username %}"
+                     class="text-decoration-none {% if u == user %}text-dark fw-bold{% else %}text-white{% endif %}">
+                    <i class="bi bi-person-circle me-1 text-muted"></i>{{ u.username }}
+                  </a>
+                </td>
+                <td class="text-end">
+                  <span class="fw-bold {% if pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if pct >= 0 %}+{% endif %}{{ pct|floatformat:1 }}%
+                  </span>
+                </td>
+                <td class="text-end small text-warning">${{ u.total_collection_value|floatformat:2 }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted small mb-0">
+          30-day growth data accumulates after the daily price sync runs for 30 days.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% if user.is_authenticated and not user.show_on_leaderboard %}
+  <div class="alert alert-secondary mt-4 small">
+    <i class="bi bi-eye-slash me-2"></i>
+    You are currently hidden from the leaderboard.
+    Update your <a href="/accounts/settings/" class="alert-link">profile settings</a> to appear here.
+  </div>
+{% endif %}
+{% endblock %}

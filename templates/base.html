@@ -43,11 +43,21 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="/cards/"><i class="bi bi-grid-3x3-gap me-1"></i>Browse</a></li>
         <li class="nav-item"><a class="nav-link" href="/marketplace/"><i class="bi bi-shop me-1"></i>Marketplace</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'leaderboard' %}"><i class="bi bi-trophy me-1"></i>Leaderboard</a></li>
       </ul>
       <ul class="navbar-nav ms-auto align-items-center gap-2">
         {% if user.is_authenticated %}
           <li class="nav-item">
             <a class="nav-link" href="/dashboard/"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+          </li>
+          <!-- Notification bell -->
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="/dashboard/#alerts" title="Alerts">
+              <i class="bi bi-bell"></i>
+              {% with cnt=user.notifications.filter %}
+              {# unread count via context processor would be cleaner; this works for now #}
+              {% endwith %}
+            </a>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
