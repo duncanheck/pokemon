@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block layout_class %}container-fluid py-4{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <div class="col-lg-2 d-none d-lg-block">
+    <nav class="sidebar p-3 rounded-3">
+      <ul class="nav flex-column gap-1">
+        <li class="nav-item">
+          <a class="nav-link active" href="{% url 'dashboard' %}">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="bi bi-collection me-2"></i>My Collection
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="bi bi-heart me-2"></i>Want List
+            {% if want_count %}
+              <span class="badge bg-warning text-dark ms-1">{{ want_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="bi bi-tag me-2"></i>For Sale
+            {% if for_sale_count %}
+              <span class="badge bg-success ms-1">{{ for_sale_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="bi bi-shop me-2"></i>Marketplace
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">
+            <i class="bi bi-trophy me-2"></i>Leaderboard
+          </a>
+        </li>
+        <li class="nav-item mt-2">
+          <a class="nav-link" href="{% url 'public_profile' user.username %}">
+            <i class="bi bi-person me-2"></i>My Profile
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <div class="col-lg-10">
+
+    <!-- Greeting -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h4 class="mb-0 fw-bold">Hey, {{ user.username }} 👋</h4>
+        <span class="text-muted small">{{ user.get_preferred_tcg_display }} collector</span>
+      </div>
+      <a href="#" class="btn btn-warning btn-sm fw-semibold">
+        <i class="bi bi-plus-lg me-1"></i>Add Cards
+      </a>
+    </div>
+
+    <!-- Stat cards row -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card p-3 text-center">
+          <div class="fs-2 fw-bold text-warning">${{ portfolio_value|floatformat:2 }}</div>
+          <div class="text-muted small">Portfolio Value</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card p-3 text-center">
+          <div class="fs-2 fw-bold">{{ stats.total_cards|default:"0" }}</div>
+          <div class="text-muted small">Total Cards</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card p-3 text-center">
+          <div class="fs-2 fw-bold">{{ stats.unique_cards|default:"0" }}</div>
+          <div class="text-muted small">Unique Cards</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card p-3 text-center">
+          <div class="fs-2 fw-bold text-info">{{ want_count }}</div>
+          <div class="text-muted small">Want List</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- TCG breakdown -->
+      <div class="col-md-4">
+        <div class="stat-card p-3 h-100">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-pie-chart me-2 text-warning"></i>By Game</h6>
+          {% if tcg_breakdown %}
+            {% for entry in tcg_breakdown %}
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge badge-tcg-{{ entry.card__tcg }} px-2 py-1">
+                  {{ entry.card__tcg|title }}
+                </span>
+                <span class="fw-semibold">{{ entry.count }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted small mb-0">No cards yet. <a href="#" class="text-warning">Add some!</a></p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Top value cards -->
+      <div class="col-md-8">
+        <div class="stat-card p-3 h-100">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-stars me-2 text-warning"></i>Top Value Cards</h6>
+          {% if top_value %}
+            <div class="table-responsive">
+              <table class="table table-dark table-hover table-sm mb-0">
+                <thead>
+                  <tr class="text-muted small">
+                    <th>Card</th>
+                    <th>Set</th>
+                    <th>Cond.</th>
+                    <th class="text-end">Market</th>
+                    <th class="text-end">P&L</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in top_value %}
+                    <tr>
+                      <td class="fw-semibold small">{{ item.card.name }}</td>
+                      <td class="text-muted small">{{ item.card.set_name|truncatechars:18 }}</td>
+                      <td><span class="badge bg-secondary">{{ item.condition }}</span></td>
+                      <td class="text-end small">${{ item.card.market_price|floatformat:2 }}</td>
+                      <td class="text-end small">
+                        {% if item.gain_loss is not None %}
+                          <span class="{% if item.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {% if item.gain_loss >= 0 %}+{% endif %}${{ item.gain_loss|floatformat:2 }}
+                          </span>
+                        {% else %}
+                          <span class="text-muted">—</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="text-muted small mb-0">Add cards with purchase prices to track gains/losses.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recent additions -->
+      <div class="col-12">
+        <div class="stat-card p-3">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-clock-history me-2 text-warning"></i>Recently Added</h6>
+          {% if recent %}
+            <div class="row g-2">
+              {% for item in recent %}
+                <div class="col-6 col-md-4 col-lg-2">
+                  <div class="bg-dark border border-secondary rounded-3 p-2 text-center h-100">
+                    {% if item.card.image_url %}
+                      <img src="{{ item.card.image_url }}" alt="{{ item.card.name }}"
+                           class="img-fluid rounded-2 mb-2" style="max-height:120px;object-fit:contain">
+                    {% else %}
+                      <div class="bg-secondary rounded-2 mb-2 d-flex align-items-center justify-content-center"
+                           style="height:120px"><i class="bi bi-card-image fs-2 text-muted"></i></div>
+                    {% endif %}
+                    <div class="small fw-semibold text-truncate">{{ item.card.name }}</div>
+                    <div class="text-muted" style="font-size:.7rem">{{ item.card.set_name|truncatechars:16 }}</div>
+                    <div class="mt-1">
+                      <span class="badge bg-secondary" style="font-size:.65rem">{{ item.condition }}</span>
+                      {% if item.is_foil %}
+                        <span class="badge bg-warning text-dark" style="font-size:.65rem">Foil</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted small mb-0">Your vault is empty. <a href="#" class="text-warning">Start adding cards →</a></p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div><!-- /main -->
+</div><!-- /row -->
+{% endblock %}
