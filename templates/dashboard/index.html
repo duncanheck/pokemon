@@ -1,97 +1,103 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
-{% block layout_class %}container-fluid py-4{% endblock %}
+{% block nav_dash %}active{% endblock %}
+{% block layout_class %}container-fluid px-3 py-4{% endblock %}
 
 {% block content %}
 <div class="row g-4">
 
-  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <!-- ── Sidebar ─────────────────────────────────────────────────── -->
   <div class="col-lg-2 d-none d-lg-block">
-    <nav class="sidebar p-3 rounded-3">
+    <nav class="sidebar">
+      <div class="sidebar-section">Main</div>
+      <ul class="nav flex-column gap-1 mb-3">
+        <li><a class="nav-link active" href="{% url 'dashboard' %}">
+          <i class="bi bi-speedometer2"></i>Dashboard
+        </a></li>
+        <li><a class="nav-link" href="{% url 'collection_list' %}">
+          <i class="bi bi-collection"></i>My Collection
+          {% if stats.total_cards %}<span class="badge ms-auto" style="background:var(--cv-border);color:#94a3b8;font-size:.65rem">{{ stats.total_cards }}</span>{% endif %}
+        </a></li>
+        <li><a class="nav-link" href="{% url 'collection_list' %}?tab=want">
+          <i class="bi bi-heart"></i>Want List
+          {% if want_count %}<span class="badge ms-auto" style="background:rgba(239,68,68,.15);color:#ef4444;font-size:.65rem">{{ want_count }}</span>{% endif %}
+        </a></li>
+        <li><a class="nav-link" href="{% url 'collection_list' %}?tab=for_sale">
+          <i class="bi bi-tag"></i>For Sale
+          {% if for_sale_count %}<span class="badge ms-auto" style="background:var(--cv-green-dim);color:var(--cv-green);font-size:.65rem">{{ for_sale_count }}</span>{% endif %}
+        </a></li>
+      </ul>
+      <div class="sidebar-section">Market</div>
+      <ul class="nav flex-column gap-1 mb-3">
+        <li><a class="nav-link" href="/marketplace/">
+          <i class="bi bi-shop"></i>Marketplace
+        </a></li>
+        <li><a class="nav-link" href="{% url 'my_listings' %}">
+          <i class="bi bi-tags"></i>My Listings
+        </a></li>
+        <li><a class="nav-link" href="{% url 'my_offers' %}">
+          <i class="bi bi-inbox"></i>My Offers
+        </a></li>
+      </ul>
+      <div class="sidebar-section">More</div>
       <ul class="nav flex-column gap-1">
-        <li class="nav-item">
-          <a class="nav-link active" href="{% url 'dashboard' %}">
-            <i class="bi bi-speedometer2 me-2"></i>Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'collection_list' %}">
-            <i class="bi bi-collection me-2"></i>My Collection
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'collection_list' %}?tab=want">
-            <i class="bi bi-heart me-2"></i>Want List
-            {% if want_count %}
-              <span class="badge bg-warning text-dark ms-1">{{ want_count }}</span>
-            {% endif %}
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'collection_list' %}?tab=for_sale">
-            <i class="bi bi-tag me-2"></i>For Sale
-            {% if for_sale_count %}
-              <span class="badge bg-success ms-1">{{ for_sale_count }}</span>
-            {% endif %}
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/marketplace/">
-            <i class="bi bi-shop me-2"></i>Marketplace
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">
-            <i class="bi bi-trophy me-2"></i>Leaderboard
-          </a>
-        </li>
-        <li class="nav-item mt-2">
-          <a class="nav-link" href="{% url 'public_profile' user.username %}">
-            <i class="bi bi-person me-2"></i>My Profile
-          </a>
-        </li>
+        <li><a class="nav-link" href="{% url 'leaderboard' %}">
+          <i class="bi bi-trophy"></i>Leaderboard
+        </a></li>
+        <li><a class="nav-link" href="{% url 'public_profile' user.username %}">
+          <i class="bi bi-person"></i>My Profile
+        </a></li>
+        <li><a class="nav-link" href="{% url 'card_search' %}">
+          <i class="bi bi-plus-circle"></i>Add Cards
+        </a></li>
       </ul>
     </nav>
   </div>
 
-  <!-- ── Main ───────────────────────────────────────────── -->
+  <!-- ── Main ────────────────────────────────────────────────────── -->
   <div class="col-lg-10">
 
     <!-- Greeting -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
-      <div>
-        <h4 class="mb-0 fw-bold">Hey, {{ user.username }} 👋</h4>
-        <span class="text-muted small">{{ user.get_preferred_tcg_display }} collector</span>
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <div class="fade-up">
+        <h4 class="fw-800 mb-0" style="font-size:1.35rem">
+          Hey, {{ user.username }} 👋
+        </h4>
+        <span class="text-cv-muted small">{{ user.get_preferred_tcg_display }} collector</span>
       </div>
-      <a href="{% url 'card_search' %}" class="btn btn-warning btn-sm fw-semibold">
+      <a href="{% url 'card_search' %}" class="btn btn-gold btn-sm px-4 fw-600 fade-up fade-up-1">
         <i class="bi bi-plus-lg me-1"></i>Add Cards
       </a>
     </div>
 
-    <!-- Stat cards row -->
+    <!-- KPI row -->
     <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 text-center">
-          <div class="fs-2 fw-bold text-warning">${{ portfolio_value|floatformat:2 }}</div>
-          <div class="text-muted small">Portfolio Value</div>
+      <div class="col-6 col-md-3 fade-up fade-up-1">
+        <div class="kpi-card" style="--accent:var(--cv-gold)">
+          <i class="bi bi-safe kpi-icon"></i>
+          <div class="kpi-value text-gold">${{ portfolio_value|floatformat:2 }}</div>
+          <div class="kpi-label">Portfolio Value</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 text-center">
-          <div class="fs-2 fw-bold">{{ stats.total_cards|default:"0" }}</div>
-          <div class="text-muted small">Total Cards</div>
+      <div class="col-6 col-md-3 fade-up fade-up-2">
+        <div class="kpi-card" style="--accent:#3b82f6">
+          <i class="bi bi-layers kpi-icon"></i>
+          <div class="kpi-value">{{ stats.total_cards|default:"0" }}</div>
+          <div class="kpi-label">Total Cards</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 text-center">
-          <div class="fs-2 fw-bold">{{ stats.unique_cards|default:"0" }}</div>
-          <div class="text-muted small">Unique Cards</div>
+      <div class="col-6 col-md-3 fade-up fade-up-2">
+        <div class="kpi-card" style="--accent:var(--cv-purple)">
+          <i class="bi bi-grid kpi-icon"></i>
+          <div class="kpi-value">{{ stats.unique_cards|default:"0" }}</div>
+          <div class="kpi-label">Unique Cards</div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
-        <div class="stat-card p-3 text-center">
-          <div class="fs-2 fw-bold text-info">{{ want_count }}</div>
-          <div class="text-muted small">Want List</div>
+      <div class="col-6 col-md-3 fade-up fade-up-3">
+        <div class="kpi-card" style="--accent:var(--cv-red)">
+          <i class="bi bi-heart kpi-icon"></i>
+          <div class="kpi-value" style="color:var(--cv-red)">{{ want_count }}</div>
+          <div class="kpi-label">Want List</div>
         </div>
       </div>
     </div>
@@ -100,53 +106,57 @@
 
       <!-- TCG breakdown -->
       <div class="col-md-4">
-        <div class="stat-card p-3 h-100">
-          <h6 class="fw-semibold mb-3"><i class="bi bi-pie-chart me-2 text-warning"></i>By Game</h6>
+        <div class="cv-card p-3 h-100">
+          <h6 class="fw-700 mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-pie-chart text-gold"></i>By Game
+          </h6>
           {% if tcg_breakdown %}
-            {% for entry in tcg_breakdown %}
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge badge-tcg-{{ entry.card__tcg }} px-2 py-1">
-                  {{ entry.card__tcg|title }}
-                </span>
-                <span class="fw-semibold">{{ entry.count }}</span>
-              </div>
-            {% endfor %}
+            <div class="d-flex flex-column gap-2">
+              {% for entry in tcg_breakdown %}
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge badge-tcg-{{ entry.card__tcg }} px-2 py-1"
+                        style="font-size:.72rem">{{ entry.card__tcg|title }}</span>
+                  <span class="fw-700" style="font-size:.9rem">{{ entry.count }}</span>
+                </div>
+              {% endfor %}
+            </div>
           {% else %}
-            <p class="text-muted small mb-0">No cards yet. <a href="#" class="text-warning">Add some!</a></p>
+            <p class="text-cv-muted small mb-0">
+              No cards yet. <a href="{% url 'card_search' %}" style="color:var(--cv-gold)">Add some!</a>
+            </p>
           {% endif %}
         </div>
       </div>
 
       <!-- Top value cards -->
       <div class="col-md-8">
-        <div class="stat-card p-3 h-100">
-          <h6 class="fw-semibold mb-3"><i class="bi bi-stars me-2 text-warning"></i>Top Value Cards</h6>
+        <div class="cv-card p-3 h-100">
+          <h6 class="fw-700 mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-stars text-gold"></i>Top Value Cards
+          </h6>
           {% if top_value %}
             <div class="table-responsive">
-              <table class="table table-dark table-hover table-sm mb-0">
+              <table class="table cv-table mb-0">
                 <thead>
-                  <tr class="text-muted small">
-                    <th>Card</th>
-                    <th>Set</th>
-                    <th>Cond.</th>
-                    <th class="text-end">Market</th>
-                    <th class="text-end">P&L</th>
+                  <tr>
+                    <th>Card</th><th>Set</th><th>Cond.</th>
+                    <th class="text-end">Market</th><th class="text-end">P&amp;L</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for item in top_value %}
                     <tr>
-                      <td class="fw-semibold small">{{ item.card.name }}</td>
-                      <td class="text-muted small">{{ item.card.set_name|truncatechars:18 }}</td>
-                      <td><span class="badge bg-secondary">{{ item.condition }}</span></td>
-                      <td class="text-end small">${{ item.card.market_price|floatformat:2 }}</td>
+                      <td class="fw-600 small">{{ item.card.name }}</td>
+                      <td class="text-cv-muted small">{{ item.card.set_name|truncatechars:16 }}</td>
+                      <td><span class="badge badge-cond-{{ item.condition }}">{{ item.condition }}</span></td>
+                      <td class="text-end small text-gold fw-600">${{ item.card.market_price|floatformat:2 }}</td>
                       <td class="text-end small">
                         {% if item.gain_loss is not None %}
-                          <span class="{% if item.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                          <span class="fw-600 {% if item.gain_loss >= 0 %}gain{% else %}loss{% endif %}">
                             {% if item.gain_loss >= 0 %}+{% endif %}${{ item.gain_loss|floatformat:2 }}
                           </span>
                         {% else %}
-                          <span class="text-muted">—</span>
+                          <span class="text-cv-muted">—</span>
                         {% endif %}
                       </td>
                     </tr>
@@ -155,33 +165,43 @@
               </table>
             </div>
           {% else %}
-            <p class="text-muted small mb-0">Add cards with purchase prices to track gains/losses.</p>
+            <p class="text-cv-muted small mb-0">Add cards with purchase prices to track P&L.</p>
           {% endif %}
         </div>
       </div>
 
-      <!-- Recent additions -->
+      <!-- Recently added -->
       <div class="col-12">
-        <div class="stat-card p-3">
-          <h6 class="fw-semibold mb-3"><i class="bi bi-clock-history me-2 text-warning"></i>Recently Added</h6>
+        <div class="cv-card p-3">
+          <h6 class="fw-700 mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-gold"></i>Recently Added
+          </h6>
           {% if recent %}
-            <div class="row g-2">
+            <div class="row row-cols-3 row-cols-md-6 g-2">
               {% for item in recent %}
-                <div class="col-6 col-md-4 col-lg-2">
-                  <div class="bg-dark border border-secondary rounded-3 p-2 text-center h-100">
+                <div class="col">
+                  <div class="tcg-card-tile p-2 text-center h-100">
                     {% if item.card.image_url %}
                       <img src="{{ item.card.image_url }}" alt="{{ item.card.name }}"
-                           class="img-fluid rounded-2 mb-2" style="max-height:120px;object-fit:contain">
+                           class="img-fluid mb-2" style="max-height:120px;object-fit:contain">
                     {% else %}
-                      <div class="bg-secondary rounded-2 mb-2 d-flex align-items-center justify-content-center"
-                           style="height:120px"><i class="bi bi-card-image fs-2 text-muted"></i></div>
+                      <div class="d-flex align-items-center justify-content-center mb-2"
+                           style="height:120px;background:var(--cv-surface)">
+                        <i class="bi bi-card-image" style="font-size:2rem;opacity:.3"></i>
+                      </div>
                     {% endif %}
-                    <div class="small fw-semibold text-truncate">{{ item.card.name }}</div>
-                    <div class="text-muted" style="font-size:.7rem">{{ item.card.set_name|truncatechars:16 }}</div>
-                    <div class="mt-1">
-                      <span class="badge bg-secondary" style="font-size:.65rem">{{ item.condition }}</span>
+                    <div class="small fw-600 text-truncate" style="font-size:.78rem">
+                      {{ item.card.name }}
+                    </div>
+                    <div class="text-cv-muted" style="font-size:.65rem">
+                      {{ item.card.set_name|truncatechars:14 }}
+                    </div>
+                    <div class="mt-1 d-flex gap-1 justify-content-center flex-wrap">
+                      <span class="badge badge-cond-{{ item.condition }}" style="font-size:.6rem">
+                        {{ item.condition }}
+                      </span>
                       {% if item.is_foil %}
-                        <span class="badge bg-warning text-dark" style="font-size:.65rem">Foil</span>
+                        <span class="badge badge-foil" style="font-size:.6rem">Foil</span>
                       {% endif %}
                     </div>
                   </div>
@@ -189,72 +209,78 @@
               {% endfor %}
             </div>
           {% else %}
-            <p class="text-muted small mb-0">Your vault is empty. <a href="#" class="text-warning">Start adding cards →</a></p>
+            <p class="text-cv-muted small mb-0">
+              Your vault is empty.
+              <a href="{% url 'card_search' %}" style="color:var(--cv-gold)">Start adding cards →</a>
+            </p>
           {% endif %}
         </div>
       </div>
 
-      <!-- Notifications panel -->
+      <!-- Notifications -->
       {% if notifications %}
-      <div class="col-12">
-        <div class="stat-card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="fw-semibold mb-0">
-              <i class="bi bi-bell me-2 text-warning"></i>Alerts
-              {% if unread_count %}<span class="badge bg-danger ms-1">{{ unread_count }}</span>{% endif %}
+      <div class="col-12" id="alerts">
+        <div class="cv-card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="fw-700 mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-bell text-gold"></i>Alerts
+              {% if unread_count %}
+                <span class="badge rounded-pill" style="background:var(--cv-red);font-size:.7rem">
+                  {{ unread_count }}
+                </span>
+              {% endif %}
             </h6>
-            <button class="btn btn-link btn-sm text-muted p-0" id="markReadBtn">
+            <button class="btn btn-link p-0 text-cv-muted" style="font-size:.8rem" id="markReadBtn">
               Mark all read
             </button>
           </div>
-          <ul class="list-unstyled mb-0">
+          <div class="d-flex flex-column gap-1">
             {% for n in notifications %}
-              <li class="d-flex align-items-start gap-2 py-2 border-bottom border-secondary
-                          {% if not n.is_read %}bg-opacity-10 bg-warning rounded-2 px-2{% endif %}">
-                <i class="bi
-                  {% if n.notif_type == 'price_surge' %}bi-graph-up-arrow text-success
+              <div class="notif-item {% if not n.is_read %}unread{% endif %} d-flex align-items-start gap-3">
+                <i class="bi mt-1 flex-shrink-0
+                  {% if n.notif_type == 'price_surge' %}bi-graph-up-arrow gain
                   {% elif n.notif_type == 'price_drop' %}bi-graph-down-arrow text-info
-                  {% elif n.notif_type == 'offer_accepted' %}bi-check-circle text-success
-                  {% else %}bi-info-circle text-muted{% endif %}
-                  mt-1"></i>
+                  {% elif n.notif_type == 'offer_accepted' %}bi-check-circle gain
+                  {% else %}bi-info-circle text-cv-muted{% endif %}"></i>
                 <div class="flex-grow-1">
-                  <span class="small">{{ n.message }}</span>
-                  {% if n.link %}
-                    <a href="{{ n.link }}" class="small text-warning ms-1">View →</a>
-                  {% endif %}
-                  <div class="text-muted" style="font-size:.65rem">{{ n.created_at|timesince }} ago</div>
+                  <div class="small" style="color:var(--cv-text)">{{ n.message }}</div>
+                  <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="text-cv-muted" style="font-size:.7rem">{{ n.created_at|timesince }} ago</span>
+                    {% if n.link %}
+                      <a href="{{ n.link }}" style="font-size:.7rem;color:var(--cv-gold)">View →</a>
+                    {% endif %}
+                  </div>
                 </div>
-              </li>
+              </div>
             {% endfor %}
-          </ul>
+          </div>
         </div>
       </div>
       {% endif %}
 
-      <!-- Portfolio value chart -->
+      <!-- Portfolio chart -->
       <div class="col-12">
-        <div class="stat-card p-3">
-          <div class="d-flex align-items-center justify-content-between mb-3">
-            <h6 class="fw-semibold mb-0">
-              <i class="bi bi-graph-up-arrow me-2 text-warning"></i>Portfolio Value Trend
+        <div class="chart-container">
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <h6 class="fw-700 mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-graph-up-arrow text-gold"></i>Portfolio Value Trend
             </h6>
-            <a href="{% url 'collection_list' %}" class="btn btn-outline-warning btn-sm">
+            <a href="{% url 'collection_list' %}" class="btn btn-outline-gold btn-sm">
               <i class="bi bi-collection me-1"></i>Manage Collection
             </a>
           </div>
-          <canvas id="portfolioChart" height="80"></canvas>
+          <canvas id="portfolioChart" height="75"></canvas>
         </div>
       </div>
 
-    </div><!-- /row -->
-  </div><!-- /main -->
-</div><!-- /row -->
+    </div><!-- /inner row -->
+  </div><!-- /main col -->
+</div><!-- /outer row -->
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-// Mark all read
 document.getElementById("markReadBtn")?.addEventListener("click", function() {
   fetch("{% url 'notifications_read' %}", {
     method: "POST",
@@ -271,24 +297,49 @@ document.getElementById("markReadBtn")?.addEventListener("click", function() {
     data: {
       labels,
       datasets: [{
-        label: "Portfolio Value ($)",
+        label: "Portfolio ($)",
         data,
-        borderColor: "#f5c842",
-        backgroundColor: "rgba(245,200,66,.08)",
+        borderColor: "#f5c518",
+        backgroundColor: ctx => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,220);
+          g.addColorStop(0, "rgba(245,197,24,.18)");
+          g.addColorStop(1, "rgba(245,197,24,0)");
+          return g;
+        },
         borderWidth: 2,
         pointRadius: 0,
-        tension: 0.35,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: "#f5c518",
+        tension: 0.4,
         fill: true,
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: false } },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#1a1a2e",
+          borderColor: "#232338",
+          borderWidth: 1,
+          titleColor: "#94a3b8",
+          bodyColor: "#f5c518",
+          bodyFont: { weight: "700" },
+          callbacks: { label: ctx => " $" + ctx.parsed.y.toLocaleString("en-US", {minimumFractionDigits:2}) },
+        },
+      },
       scales: {
-        x: { grid: { color: "#2a2a3f" }, ticks: { color: "#6c757d", maxTicksLimit: 6 } },
-        y: { grid: { color: "#2a2a3f" }, ticks: { color: "#6c757d",
-             callback: v => "$" + v.toLocaleString() } },
-      }
+        x: {
+          grid: { color: "rgba(35,35,56,.8)" },
+          ticks: { color: "#64748b", maxTicksLimit: 7, font: { size: 11 } },
+        },
+        y: {
+          grid: { color: "rgba(35,35,56,.8)" },
+          ticks: { color: "#64748b", font: { size: 11 },
+                   callback: v => "$" + v.toLocaleString() },
+        },
+      },
     }
   });
 })();

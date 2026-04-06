@@ -6,7 +6,7 @@
 <div class="row justify-content-center mb-4">
   <div class="col-lg-8">
     <form method="get" action="{% url 'card_search' %}" class="d-flex gap-2 flex-wrap">
-      <select name="tcg" class="form-select form-select-sm bg-dark border-secondary text-light" style="max-width:160px">
+      <select name="tcg" class="form-select form-select-sm cv-select" style="max-width:160px">
         <option value="">All Games</option>
         {% for val, label in TCG_CHOICES %}
           <option value="{{ val }}" {% if tcg == val %}selected{% endif %}>{{ label }}</option>
@@ -14,10 +14,10 @@
       </select>
       <div class="input-group flex-grow-1">
         <input type="search" name="q" value="{{ query }}"
-               class="form-control bg-dark border-secondary text-light"
+               class="form-control cv-input"
                placeholder="Search cards — e.g. Charizard, Black Lotus…"
                autofocus>
-        <button class="btn btn-warning fw-semibold px-4" type="submit">
+        <button class="btn btn-gold fw-600 px-4" type="submit">
           <i class="bi bi-search me-1"></i>Search
         </button>
       </div>
@@ -43,27 +43,27 @@
   <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-4">
     {% for card in results %}
       <div class="col">
-        <div class="h-100 bg-dark border border-secondary rounded-3 p-2 d-flex flex-column align-items-center text-center position-relative">
+        <div class="tcg-card-tile p-2 h-100 d-flex flex-column align-items-center text-center">
           {% if card.image_url %}
             <img src="{{ card.image_url }}" alt="{{ card.name }}"
-                 class="img-fluid rounded-2 mb-2" style="max-height:140px;object-fit:contain">
+                 class="img-fluid mb-2" style="max-height:140px;object-fit:contain">
           {% else %}
-            <div class="d-flex align-items-center justify-content-center bg-secondary rounded-2 mb-2"
-                 style="height:140px;width:100%">
-              <i class="bi bi-card-image fs-1 text-muted"></i>
+            <div class="d-flex align-items-center justify-content-center mb-2"
+                 style="height:140px;width:100%;background:var(--cv-surface)">
+              <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.2"></i>
             </div>
           {% endif %}
 
-          <div class="small fw-semibold text-truncate w-100">{{ card.name }}</div>
-          <div class="text-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
+          <div class="small fw-700 text-white text-truncate w-100">{{ card.name }}</div>
+          <div class="text-cv-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
 
           {% if card.market_price %}
-            <div class="text-warning fw-semibold small mb-2">${{ card.market_price }}</div>
+            <div class="fw-700 text-gold small mb-2">${{ card.market_price }}</div>
           {% endif %}
 
           {% if user.is_authenticated %}
             <button type="button"
-                    class="btn btn-outline-warning btn-sm mt-auto w-100"
+                    class="btn btn-gold btn-sm mt-auto w-100 fw-600"
                     data-add-card
                     data-tcg-id="{{ card.tcg_id }}"
                     data-tcg="{{ card.tcg }}"

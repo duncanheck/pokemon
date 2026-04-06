@@ -18,12 +18,19 @@ def home(request):
     if request.user.is_authenticated:
         from django.shortcuts import redirect
         return redirect("dashboard")
+    from apps.cards.models import Card
     features = [
-        ("graph-up-arrow", "Live Portfolio", "Real-time market value with price history charts."),
-        ("shop",           "P2P Marketplace", "Buy, sell, and trade — no middleman."),
-        ("bell",           "Price Alerts",    "Get notified when your cards spike in value."),
+        ("graph-up-arrow",  "Live Portfolio",    "Real-time market value with 30-day history charts and P&L per card.",  "#f5c518"),
+        ("shop",            "P2P Marketplace",   "List cards for sale or trade. Negotiate directly — no fees.",           "#00d68f"),
+        ("bell",            "Price Surge Alerts","Get notified when any card you own or hunt jumps in value.",            "#7c3aed"),
+        ("shield-check",    "Condition Tracking","Track Mint through Damaged grades with purchase-price cost basis.",     "#3b82f6"),
+        ("trophy",          "Leaderboard",       "See how your vault stacks up against other collectors.",                "#f97316"),
+        ("arrow-left-right","Trade Offers",      "Send counter-offers, accept or decline — full negotiation flow.",       "#ec4899"),
     ]
-    return render(request, "home.html", {"features": features})
+    return render(request, "home.html", {
+        "features":    features,
+        "tcg_choices": Card.TCG_CHOICES,
+    })
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────

@@ -1,110 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Marketplace{% endblock %}
+{% block nav_market %}active{% endblock %}
 
 {% block content %}
+<!-- Header -->
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
-    <h4 class="mb-0 fw-bold"><i class="bi bi-shop me-2 text-warning"></i>Marketplace</h4>
-    <span class="text-muted small">{{ total }} active listing{{ total|pluralize }}</span>
+    <h4 class="fw-800 mb-0"><i class="bi bi-shop me-2 text-gold"></i>Marketplace</h4>
+    <span class="text-cv-muted small">{{ total }} active listing{{ total|pluralize }}</span>
   </div>
   {% if user.is_authenticated %}
-    <a href="{% url 'listing_create' %}" class="btn btn-warning btn-sm fw-semibold">
+    <a href="{% url 'listing_create' %}" class="btn btn-gold btn-sm px-4 fw-600">
       <i class="bi bi-plus-lg me-1"></i>List a Card
     </a>
   {% endif %}
 </div>
 
 <!-- Filter bar -->
-<form method="get" class="row g-2 mb-4 align-items-end">
-  <div class="col-12 col-md-4">
-    <input type="search" name="q" value="{{ q }}"
-           class="form-control form-control-sm bg-dark border-secondary text-light"
-           placeholder="Search card name…">
-  </div>
-  <div class="col-6 col-md-2">
-    <select name="tcg" class="form-select form-select-sm bg-dark border-secondary text-light">
-      <option value="">All Games</option>
-      {% for val, label in TCG_CHOICES %}
-        <option value="{{ val }}" {% if tcg == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-6 col-md-2">
-    <select name="type" class="form-select form-select-sm bg-dark border-secondary text-light">
-      <option value="">All Types</option>
-      {% for val, label in LISTING_CHOICES %}
-        <option value="{{ val }}" {% if ltype == val %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-6 col-md-1">
-    <input type="number" name="min" value="{{ min_p }}" placeholder="Min $"
-           class="form-control form-control-sm bg-dark border-secondary text-light" min="0" step="0.01">
-  </div>
-  <div class="col-6 col-md-1">
-    <input type="number" name="max" value="{{ max_p }}" placeholder="Max $"
-           class="form-control form-control-sm bg-dark border-secondary text-light" min="0" step="0.01">
-  </div>
-  <div class="col-12 col-md-2 d-flex gap-2">
-    <button type="submit" class="btn btn-warning btn-sm flex-grow-1">Filter</button>
-    {% if q or tcg or ltype or min_p or max_p %}
-      <a href="{% url 'marketplace_browse' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
-    {% endif %}
+<form method="get" class="cv-card p-3 mb-4">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <input type="search" name="q" value="{{ q }}"
+             class="form-control form-control-sm cv-input"
+             placeholder="Search card name…">
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="tcg" class="form-select form-select-sm cv-select">
+        <option value="">All Games</option>
+        {% for val, label in TCG_CHOICES %}
+          <option value="{{ val }}" {% if tcg == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <select name="type" class="form-select form-select-sm cv-select">
+        <option value="">All Types</option>
+        {% for val, label in LISTING_CHOICES %}
+          <option value="{{ val }}" {% if ltype == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-1">
+      <input type="number" name="min" value="{{ min_p }}" placeholder="Min $"
+             class="form-control form-control-sm cv-input" min="0" step="0.01">
+    </div>
+    <div class="col-6 col-md-1">
+      <input type="number" name="max" value="{{ max_p }}" placeholder="Max $"
+             class="form-control form-control-sm cv-input" min="0" step="0.01">
+    </div>
+    <div class="col-12 col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-gold btn-sm flex-grow-1 fw-600">Filter</button>
+      {% if q or tcg or ltype or min_p or max_p %}
+        <a href="{% url 'marketplace_browse' %}" class="btn btn-sm"
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+          Clear
+        </a>
+      {% endif %}
+    </div>
   </div>
 </form>
 
 {% if page_obj.object_list %}
-  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 mb-4">
     {% for listing in page_obj %}
-      {% with card=listing.collection_item.card %}
+      {% with card=listing.collection_item.card item=listing.collection_item %}
       <div class="col">
-        <a href="{% url 'listing_detail' listing.pk %}"
-           class="text-decoration-none text-white h-100">
-          <div class="h-100 bg-dark border border-secondary rounded-3 p-3 d-flex flex-column
-                      listing-card position-relative">
+        <a href="{% url 'listing_detail' listing.pk %}" class="text-decoration-none">
+          <div class="listing-card p-3 h-100 d-flex flex-column">
+
             <!-- Type badge -->
-            <span class="position-absolute top-0 end-0 m-2
-                         badge {% if listing.listing_type == 'trade' %}bg-info
-                                {% elif listing.listing_type == 'both' %}bg-purple
-                                {% else %}bg-success{% endif %}"
-                  style="font-size:.65rem">
+            <span class="badge mb-2 align-self-start"
+                  style="font-size:.65rem;
+                  {% if listing.listing_type == 'trade' %}background:rgba(59,130,246,.15);color:#60a5fa
+                  {% elif listing.listing_type == 'both' %}background:rgba(124,58,237,.15);color:#a78bfa
+                  {% else %}background:var(--cv-green-dim);color:var(--cv-green){% endif %}">
               {{ listing.get_listing_type_display }}
             </span>
 
+            <!-- Card image -->
             {% if card.image_url %}
               <img src="{{ card.image_url }}" alt="{{ card.name }}"
-                   class="img-fluid rounded-2 mb-2 mx-auto"
-                   style="max-height:130px;object-fit:contain">
+                   class="img-fluid rounded mb-2 mx-auto d-block"
+                   style="max-height:140px;object-fit:contain">
             {% else %}
-              <div class="d-flex align-items-center justify-content-center bg-secondary rounded-2 mb-2"
-                   style="height:130px"><i class="bi bi-card-image fs-1 text-muted"></i></div>
+              <div class="d-flex align-items-center justify-content-center mb-2"
+                   style="height:140px;background:var(--cv-surface);border-radius:8px">
+                <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.2"></i>
+              </div>
             {% endif %}
 
-            <div class="small fw-bold text-truncate">{{ card.name }}</div>
-            <div class="text-muted mb-1" style="font-size:.7rem">
-              {{ card.set_name|truncatechars:22 }}
-            </div>
-            <div class="d-flex align-items-center gap-1 mb-2 flex-wrap">
-              <span class="badge bg-secondary" style="font-size:.6rem">
-                {{ listing.collection_item.condition }}
+            <div class="small fw-700 text-white text-truncate">{{ card.name }}</div>
+            <div class="text-cv-muted mb-2" style="font-size:.7rem">{{ card.set_name|truncatechars:22 }}</div>
+
+            <div class="d-flex gap-1 mb-2 flex-wrap">
+              <span class="badge badge-cond-{{ item.condition }}" style="font-size:.6rem">
+                {{ item.condition }}
               </span>
-              {% if listing.collection_item.is_foil %}
-                <span class="badge bg-warning text-dark" style="font-size:.6rem">Foil</span>
+              {% if item.is_foil %}
+                <span class="badge badge-foil" style="font-size:.6rem">Foil</span>
               {% endif %}
             </div>
 
-            <div class="mt-auto d-flex align-items-center justify-content-between">
+            <div class="mt-auto d-flex justify-content-between align-items-center">
               {% if listing.asking_price %}
-                <span class="fw-bold text-warning">${{ listing.asking_price }}</span>
+                <span class="fw-800 text-gold">${{ listing.asking_price }}</span>
               {% else %}
-                <span class="text-muted small">Trade only</span>
+                <span class="text-cv-muted small">Trade only</span>
               {% endif %}
-              <span class="text-muted" style="font-size:.7rem">
-                <i class="bi bi-person me-1"></i>{{ listing.seller.username }}
+              <span class="text-cv-muted" style="font-size:.7rem">
+                {{ listing.seller.username }}
               </span>
             </div>
+
             {% if listing.accepts_offers %}
-              <div class="text-success mt-1" style="font-size:.65rem">
+              <div class="mt-1" style="font-size:.65rem;color:var(--cv-green)">
                 <i class="bi bi-chat-dots me-1"></i>Accepts offers
               </div>
             {% endif %}
@@ -117,19 +126,22 @@
 
   <!-- Pagination -->
   {% if page_obj.has_other_pages %}
-    <nav class="d-flex justify-content-center gap-1">
+    <nav class="d-flex justify-content-center gap-2">
       {% if page_obj.has_previous %}
-        <a href="?{% if q %}q={{ q }}&{% endif %}{% if tcg %}tcg={{ tcg }}&{% endif %}page={{ page_obj.previous_page_number }}"
-           class="btn btn-outline-secondary btn-sm">
+        <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.previous_page_number }}"
+           class="btn btn-sm"
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
           <i class="bi bi-chevron-left"></i>
         </a>
       {% endif %}
-      <span class="btn btn-dark btn-sm disabled">
+      <span class="btn btn-sm disabled"
+            style="background:var(--cv-surface);border:1px solid var(--cv-border);color:#64748b">
         {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
       </span>
       {% if page_obj.has_next %}
-        <a href="?{% if q %}q={{ q }}&{% endif %}{% if tcg %}tcg={{ tcg }}&{% endif %}page={{ page_obj.next_page_number }}"
-           class="btn btn-outline-secondary btn-sm">
+        <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.next_page_number }}"
+           class="btn btn-sm"
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
           <i class="bi bi-chevron-right"></i>
         </a>
       {% endif %}
@@ -137,9 +149,13 @@
   {% endif %}
 
 {% else %}
-  <div class="text-center py-5 text-muted stat-card">
-    <i class="bi bi-shop fs-1 d-block mb-2 opacity-25"></i>
-    No listings found.{% if q or tcg or ltype %} Try changing your filters.{% endif %}
+  <div class="cv-card p-5 text-center text-cv-muted">
+    <i class="bi bi-shop" style="font-size:3rem;opacity:.15;display:block;margin-bottom:1rem"></i>
+    No listings found.
+    {% if q or tcg or ltype %}Try changing your filters.{% endif %}
+    {% if user.is_authenticated %}
+      <br><a href="{% url 'listing_create' %}" style="color:var(--cv-gold)">List your first card →</a>
+    {% endif %}
   </div>
 {% endif %}
 {% endblock %}
