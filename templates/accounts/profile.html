@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }}'s Vault{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Profile header -->
+  <div class="col-12">
+    <div class="stat-card p-4 d-flex align-items-center gap-4">
+      {% if profile_user.avatar %}
+        <img src="{{ profile_user.avatar.url }}" class="rounded-circle" width="80" height="80" alt="">
+      {% else %}
+        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:80px;height:80px">
+          <i class="bi bi-person fs-2"></i>
+        </div>
+      {% endif %}
+      <div class="flex-grow-1">
+        <h3 class="mb-0 fw-bold">{{ profile_user.username }}</h3>
+        <span class="badge badge-tcg-{{ profile_user.preferred_tcg }} me-2">{{ profile_user.get_preferred_tcg_display }}</span>
+        {% if profile_user.location %}<span class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ profile_user.location }}</span>{% endif %}
+        {% if profile_user.bio %}<p class="text-muted small mt-2 mb-0">{{ profile_user.bio }}</p>{% endif %}
+      </div>
+      <div class="text-end d-none d-md-block">
+        <div class="fw-bold fs-4">${{ profile_user.total_collection_value|floatformat:2 }}</div>
+        <div class="text-muted small">Collection Value</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="col-md-3">
+    <div class="stat-card p-3 text-center">
+      <div class="fs-3 fw-bold">{{ stats.total_cards|default:"0" }}</div>
+      <div class="text-muted small">Total Cards</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card p-3 text-center">
+      <div class="fs-3 fw-bold">{{ stats.unique_cards|default:"0" }}</div>
+      <div class="text-muted small">Unique Cards</div>
+    </div>
+  </div>
+
+  <!-- TCG breakdown -->
+  <div class="col-md-6">
+    <div class="stat-card p-3">
+      <h6 class="fw-semibold mb-2">Collection by Game</h6>
+      {% for entry in tcg_breakdown %}
+        <div class="d-flex justify-content-between mb-1">
+          <span class="badge badge-tcg-{{ entry.card__tcg }}">{{ entry.card__tcg|title }}</span>
+          <span class="small fw-semibold">{{ entry.count }}</span>
+        </div>
+      {% empty %}
+        <p class="text-muted small mb-0">Empty collection.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Collection grid -->
+  <div class="col-12">
+    <div class="stat-card p-3">
+      <h6 class="fw-semibold mb-3">Collection (recent 20)</h6>
+      {% if collection %}
+        <div class="row g-2">
+          {% for item in collection %}
+            <div class="col-6 col-md-3 col-lg-2">
+              <div class="bg-dark border border-secondary rounded-3 p-2 text-center">
+                {% if item.card.image_url %}
+                  <img src="{{ item.card.image_url }}" alt="{{ item.card.name }}"
+                       class="img-fluid rounded-2 mb-1" style="max-height:110px;object-fit:contain">
+                {% endif %}
+                <div class="small fw-semibold text-truncate">{{ item.card.name }}</div>
+                <div class="text-muted" style="font-size:.7rem">{{ item.card.set_name|truncatechars:14 }}</div>
+                <span class="badge bg-secondary mt-1" style="font-size:.65rem">{{ item.condition }}</span>
+                {% if item.for_sale %}
+                  <span class="badge bg-success mt-1" style="font-size:.65rem">For Sale</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted small">No public cards yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

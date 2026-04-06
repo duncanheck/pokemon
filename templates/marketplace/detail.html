@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.collection_item.card.name }} — Marketplace{% endblock %}
+
+{% block content %}
+{% with card=listing.collection_item.card item=listing.collection_item %}
+<div class="row g-4">
+
+  <!-- Left: card image -->
+  <div class="col-md-3 text-center">
+    {% if card.image_url_hi or card.image_url %}
+      <img src="{{ card.image_url_hi|default:card.image_url }}" alt="{{ card.name }}"
+           class="img-fluid rounded-3 shadow" style="max-height:360px">
+    {% else %}
+      <div class="stat-card rounded-3 d-flex align-items-center justify-content-center"
+           style="height:280px"><i class="bi bi-card-image fs-1 text-muted"></i></div>
+    {% endif %}
+  </div>
+
+  <!-- Center: listing info -->
+  <div class="col-md-5">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <span class="badge badge-tcg-{{ card.tcg }}">{{ card.get_tcg_display }}</span>
+      <span class="badge bg-secondary">{{ item.condition }}</span>
+      {% if item.is_foil %}<span class="badge bg-warning text-dark">Foil</span>{% endif %}
+      <span class="badge {% if listing.status == 'active' %}bg-success
+                         {% elif listing.status == 'reserved' %}bg-warning text-dark
+                         {% else %}bg-secondary{% endif %}">
+        {{ listing.get_status_display }}
+      </span>
+    </div>
+
+    <h2 class="fw-bold mb-0">{{ card.name }}</h2>
+    <p class="text-muted">{{ card.set_name }}</p>
+
+    <div class="mb-3">
+      {% if listing.asking_price %}
+        <div class="fs-3 fw-bold text-warning">${{ listing.asking_price }}</div>
+      {% endif %}
+      <div class="text-muted small">
+        <span class="me-3"><i class="bi bi-box me-1"></i>Qty: {{ listing.quantity_available }}</span>
+        <span class="me-3"><i class="bi bi-tag me-1"></i>{{ listing.get_listing_type_display }}</span>
+        <span><i class="bi bi-eye me-1"></i>{{ listing.views_count }} view{{ listing.views_count|pluralize }}</span>
+      </div>
+    </div>
+
+    {% if listing.description %}
+      <div class="stat-card p-3 mb-3 rounded-3">
+        <h6 class="fw-semibold small mb-1 text-muted">Description</h6>
+        <p class="mb-0 small">{{ listing.description|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+
+    {% if listing.trade_wants %}
+      <div class="stat-card p-3 mb-3 rounded-3">
+        <h6 class="fw-semibold small mb-1 text-warning">
+          <i class="bi bi-arrow-left-right me-1"></i>Seller wants in trade
+        </h6>
+        <p class="mb-0 small">{{ listing.trade_wants|linebreaksbr }}</p>
+      </div>
+    {% endif %}
+
+    <div class="text-muted small">
+      Listed by
+      <a href="{% url 'public_profile' listing.seller.username %}" class="text-warning">
+        {{ listing.seller.username }}
+      </a>
+      · {{ listing.created_at|date:"M j, Y" }}
+    </div>
+
+    <!-- Seller controls -->
+    {% if user == listing.seller %}
+      <div class="mt-3 d-flex gap-2 flex-wrap">
+        {% if listing.status in "active reserved" %}
+          <a href="{% url 'listing_edit' listing.pk %}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </a>
+        {% endif %}
+        {% if listing.status == "active" %}
+          <form method="post" action="{% url 'listing_cancel' listing.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm"
+                    onclick="return confirm('Cancel this listing?')">
+              <i class="bi bi-x-circle me-1"></i>Cancel Listing
+            </button>
+          </form>
+        {% endif %}
+        <a href="{% url 'my_listings' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-list me-1"></i>My Listings
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: offer panel -->
+  <div class="col-md-4">
+
+    <!-- ── Buyer: make offer ────────────────────────────── -->
+    {% if user.is_authenticated and user != listing.seller and listing.status == "active" %}
+      {% if user_offer %}
+        <!-- Existing offer status -->
+        <div class="stat-card p-3 mb-3">
+          <h6 class="fw-semibold mb-2"><i class="bi bi-chat-dots me-2 text-warning"></i>Your Offer</h6>
+          <div class="mb-1">
+            {% if user_offer.offered_price %}
+              <span class="fw-bold text-warning">${{ user_offer.offered_price }}</span>
+            {% endif %}
+            {% if user_offer.trade_offer_description %}
+              <p class="text-muted small mb-1">{{ user_offer.trade_offer_description }}</p>
+            {% endif %}
+          </div>
+          <span class="badge
+            {% if user_offer.status == 'pending' %}bg-info
+            {% elif user_offer.status == 'accepted' %}bg-success
+            {% elif user_offer.status == 'countered' %}bg-warning text-dark
+            {% else %}bg-secondary{% endif %}">
+            {{ user_offer.get_status_display }}
+          </span>
+
+          {% if user_offer.status == "countered" %}
+            <div class="mt-2 p-2 rounded-3" style="background:#2a2a3f">
+              <div class="small text-muted">Seller's counter:</div>
+              {% if user_offer.counter_price %}
+                <div class="fw-bold text-warning">${{ user_offer.counter_price }}</div>
+              {% endif %}
+              {% if user_offer.counter_message %}
+                <p class="small mb-1">{{ user_offer.counter_message }}</p>
+              {% endif %}
+              <div class="d-flex gap-2 mt-2">
+                <form method="post" action="{% url 'accept_counter' user_offer.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-success btn-sm">Accept Counter</button>
+                </form>
+                <form method="post" action="{% url 'withdraw_offer' user_offer.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-outline-danger btn-sm">Decline</button>
+                </form>
+              </div>
+            </div>
+          {% endif %}
+
+          {% if user_offer.status == "pending" %}
+            <form method="post" action="{% url 'withdraw_offer' user_offer.pk %}" class="mt-2">
+              {% csrf_token %}
+              <button class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-x me-1"></i>Withdraw Offer
+              </button>
+            </form>
+          {% endif %}
+        </div>
+
+      {% elif listing.accepts_offers %}
+        <div class="stat-card p-3 mb-3">
+          <h6 class="fw-semibold mb-3"><i class="bi bi-chat-dots me-2 text-warning"></i>Make an Offer</h6>
+          <form method="post" action="{% url 'make_offer' listing.pk %}">
+            {% csrf_token %}
+            {% for field in offer_form %}
+              <div class="mb-2">
+                <label class="form-label small fw-semibold mb-1">{{ field.label }}</label>
+                {{ field }}
+                {% for err in field.errors %}
+                  <div class="text-danger" style="font-size:.75rem">{{ err }}</div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-warning w-100 btn-sm fw-semibold mt-1">
+              Send Offer
+            </button>
+          </form>
+        </div>
+      {% endif %}
+
+      <!-- Buy now (no negotiation) -->
+      {% if listing.asking_price and listing.status == "active" %}
+        <div class="stat-card p-3 text-center">
+          <div class="text-muted small mb-2">Ready to buy at asking price?</div>
+          <a href="mailto:{{ listing.seller.email }}?subject=CardVault: {{ card.name }} listing {{ listing.pk }}"
+             class="btn btn-success w-100 btn-sm fw-semibold">
+            <i class="bi bi-envelope me-1"></i>Contact Seller
+          </a>
+          <div class="text-muted mt-1" style="font-size:.65rem">
+            Direct contact for payment &amp; shipping.
+          </div>
+        </div>
+      {% endif %}
+
+    {% elif not user.is_authenticated %}
+      <div class="stat-card p-3 text-center">
+        <p class="text-muted small mb-2">Log in to make an offer or contact the seller.</p>
+        <a href="{% url 'account_login' %}" class="btn btn-warning btn-sm fw-semibold">Log In</a>
+      </div>
+    {% endif %}
+
+    <!-- ── Seller: pending offers panel ─────────────────── -->
+    {% if user == listing.seller and pending_offers %}
+      <div class="stat-card p-3 mt-3">
+        <h6 class="fw-semibold mb-3">
+          <i class="bi bi-inbox me-2 text-warning"></i>Pending Offers ({{ pending_offers|length }})
+        </h6>
+        {% for offer in pending_offers %}
+          <div class="border border-secondary rounded-3 p-2 mb-2">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <a href="{% url 'public_profile' offer.buyer.username %}" class="text-warning small fw-semibold">
+                {{ offer.buyer.username }}
+              </a>
+              {% if offer.offered_price %}
+                <span class="fw-bold text-warning">${{ offer.offered_price }}</span>
+              {% endif %}
+            </div>
+            {% if offer.trade_offer_description %}
+              <p class="small text-muted mb-1">{{ offer.trade_offer_description|truncatechars:80 }}</p>
+            {% endif %}
+            {% if offer.message %}
+              <p class="small mb-2">{{ offer.message|truncatechars:80 }}</p>
+            {% endif %}
+
+            <!-- Accept / Decline -->
+            <div class="d-flex gap-1 flex-wrap mb-2">
+              <form method="post" action="{% url 'respond_offer' offer.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="accept">
+                <button class="btn btn-success btn-sm">Accept</button>
+              </form>
+              <form method="post" action="{% url 'respond_offer' offer.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decline">
+                <button class="btn btn-outline-danger btn-sm">Decline</button>
+              </form>
+              <button class="btn btn-outline-warning btn-sm"
+                      onclick="toggleCounter({{ offer.pk }})">Counter</button>
+            </div>
+
+            <!-- Counter form (hidden) -->
+            <div id="counter-{{ offer.pk }}" style="display:none">
+              <form method="post" action="{% url 'respond_offer' offer.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="counter">
+                <input type="number" name="counter_price" step="0.01" placeholder="Counter price ($)"
+                       class="form-control form-control-sm bg-dark border-secondary text-light mb-1">
+                <textarea name="counter_message" rows="2" placeholder="Your message…"
+                          class="form-control form-control-sm bg-dark border-secondary text-light mb-1"></textarea>
+                <button class="btn btn-warning btn-sm w-100">Send Counter</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  </div><!-- /right col -->
+</div><!-- /row -->
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCounter(pk) {
+  const el = document.getElementById("counter-" + pk);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+</script>
+{% endblock %}

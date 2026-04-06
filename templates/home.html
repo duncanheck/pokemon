@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}CardVault – Track. Trade. Win.{% endblock %}
+{% block layout_class %}container py-5{% endblock %}
+
+{% block content %}
+<div class="row align-items-center g-5 py-4">
+  <div class="col-lg-6">
+    <h1 class="display-4 fw-bold lh-sm mb-3">
+      Your TCG collection,<br><span style="color:var(--cv-gold)">live &amp; valued.</span>
+    </h1>
+    <p class="lead text-muted mb-4">
+      Track Pokémon, MTG, Yu-Gi-Oh! and more as a live portfolio.
+      Buy, sell, and trade directly with other collectors — no middleman.
+    </p>
+    <div class="d-flex gap-3 flex-wrap">
+      <a href="{% url 'account_signup' %}" class="btn btn-warning btn-lg fw-semibold px-4">
+        <i class="bi bi-safe me-2"></i>Start your vault — free
+      </a>
+      <a href="/marketplace/" class="btn btn-outline-light btn-lg px-4">Browse Market</a>
+    </div>
+  </div>
+  <div class="col-lg-6 text-center">
+    <!-- Placeholder hero graphic — replace with real screenshot in Phase 6 -->
+    <div class="stat-card p-5 rounded-4" style="min-height:280px;display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-safe2 text-warning" style="font-size:6rem;opacity:.6"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Feature row -->
+<div class="row g-4 mt-2">
+  {% for icon, title, desc in features %}
+  <div class="col-md-4">
+    <div class="stat-card p-4 h-100">
+      <i class="bi bi-{{ icon }} fs-2 text-warning mb-3 d-block"></i>
+      <h5 class="fw-bold">{{ title }}</h5>
+      <p class="text-muted small mb-0">{{ desc }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

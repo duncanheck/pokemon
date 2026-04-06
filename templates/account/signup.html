@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load allauth %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block layout_class %}container py-5{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="stat-card p-4">
+      <h2 class="mb-1 fw-bold">Create your vault</h2>
+      <p class="text-muted small mb-4">Track, trade, and grow your TCG collection</p>
+
+      <form method="post" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label small fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <input type="{{ field.field.widget.input_type }}"
+                   name="{{ field.html_name }}"
+                   id="{{ field.id_for_label }}"
+                   class="form-control bg-dark border-secondary text-light{% if field.errors %} is-invalid{% endif %}"
+                   {% if field.value %}value="{{ field.value }}"{% endif %}
+                   autocomplete="{{ field.html_name }}">
+            {% if field.help_text %}
+              <div class="form-text text-muted small">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <button type="submit" class="btn btn-warning w-100 fw-semibold mt-1">Create Account</button>
+      </form>
+
+      <hr class="border-secondary my-3">
+      <p class="text-center text-muted small mb-0">
+        Already have an account? <a href="{% url 'account_login' %}" class="text-warning">Log in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

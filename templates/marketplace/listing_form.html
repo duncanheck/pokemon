@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Listing{% endblock %}
+{% block layout_class %}container py-4{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="stat-card p-4">
+      <h4 class="fw-bold mb-4">
+        <i class="bi bi-tag me-2 text-warning"></i>{{ action }} Listing
+      </h4>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Card from your collection *</label>
+          {{ form.collection_item }}
+          {% for err in form.collection_item.errors %}
+            <div class="text-danger small">{{ err }}</div>
+          {% endfor %}
+          <div class="form-text text-muted small">
+            Only cards in your Have list (not want list) can be listed.
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Listing type *</label>
+            {{ form.listing_type }}
+            {% for err in form.listing_type.errors %}
+              <div class="text-danger small">{{ err }}</div>
+            {% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Asking price ($)</label>
+            {{ form.asking_price }}
+            {% for err in form.asking_price.errors %}
+              <div class="text-danger small">{{ err }}</div>
+            {% endfor %}
+            <div class="form-text text-muted small">Required for Sale / Sale or Trade.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Quantity available *</label>
+            {{ form.quantity_available }}
+          </div>
+          <div class="col-md-6 d-flex align-items-center gap-2 mt-4">
+            <div class="form-check">
+              {{ form.accepts_offers }}
+              <label class="form-check-label small" for="{{ form.accepts_offers.id_for_label }}">
+                Accept offers / negotiation
+              </label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Description</label>
+            {{ form.description }}
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Trade wants</label>
+            {{ form.trade_wants }}
+            <div class="form-text text-muted small">
+              Describe what you'd accept in trade (leave blank if sale only).
+            </div>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger mt-3 py-2 small">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-warning fw-semibold px-4">
+            {{ action }} Listing
+          </button>
+          <a href="{% url 'my_listings' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

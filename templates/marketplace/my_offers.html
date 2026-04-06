@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}My Offers{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h4 class="mb-0 fw-bold"><i class="bi bi-inbox me-2 text-warning"></i>My Offers</h4>
+  <a href="{% url 'my_listings' %}" class="btn btn-outline-secondary btn-sm">My Listings</a>
+</div>
+
+{% if offers %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+      <thead>
+        <tr class="text-muted small border-secondary">
+          <th>Card</th>
+          <th>Seller</th>
+          <th class="text-end">Asking</th>
+          <th class="text-end">Your Offer</th>
+          <th>Status</th>
+          <th>Expires</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for offer in offers %}
+          {% with listing=offer.listing card=offer.listing.collection_item.card %}
+          <tr>
+            <td>
+              <a href="{% url 'listing_detail' listing.pk %}" class="text-white text-decoration-none">
+                <div class="d-flex align-items-center gap-2">
+                  {% if card.image_url %}
+                    <img src="{{ card.image_url }}" style="height:34px;border-radius:4px" alt="">
+                  {% endif %}
+                  <div class="small fw-semibold">{{ card.name }}</div>
+                </div>
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'public_profile' listing.seller.username %}"
+                 class="text-warning small">{{ listing.seller.username }}</a>
+            </td>
+            <td class="text-end text-warning small fw-semibold">
+              {% if listing.asking_price %}${{ listing.asking_price }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end small">
+              {% if offer.offered_price %}<span class="text-success">${{ offer.offered_price }}</span>{% endif %}
+              {% if offer.trade_offer_description %}
+                <span class="text-muted" style="font-size:.65rem">Trade</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge
+                {% if offer.status == 'pending' %}bg-info
+                {% elif offer.status == 'accepted' %}bg-success
+                {% elif offer.status == 'countered' %}bg-warning text-dark
+                {% elif offer.status == 'declined' %}bg-danger
+                {% else %}bg-secondary{% endif %}">
+                {{ offer.get_status_display }}
+              </span>
+            </td>
+            <td class="text-muted small">
+              {{ offer.expires_at|date:"M j"|default:"—" }}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'listing_detail' listing.pk %}"
+                 class="btn btn-sm btn-outline-secondary py-0 px-2">View</a>
+              {% if offer.status == "pending" %}
+                <form method="post" action="{% url 'withdraw_offer' offer.pk %}"
+                      class="d-inline ms-1">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger py-0 px-2">Withdraw</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="text-center py-5 stat-card text-muted">
+    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+    No offers made yet.
+    <a href="{% url 'marketplace_browse' %}" class="text-warning">Browse the marketplace →</a>
+  </div>
+{% endif %}
+{% endblock %}
