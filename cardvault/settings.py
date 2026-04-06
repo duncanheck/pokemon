@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "django_celery_beat",
     # Local apps
     "apps.accounts",
     "apps.cards",
@@ -115,11 +116,35 @@ LOGOUT_REDIRECT_URL = "/"
 AUTH_USER_MODEL = "accounts.User"
 
 # Celery
-CELERY_BROKER_URL = env("REDIS_URL", default="redis://localhost:6379/0")
+CELERY_BROKER_URL    = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    # Every day at 03:00 UTC — refresh prices + take portfolio snapshots
+    "daily-price-sync": {
+        "task":     "apps.cards.tasks.sync_all_prices",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+
+# Email — console backend for dev; override with SMTP env vars in production
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST     = env("EMAIL_HOST",     default="localhost")
+EMAIL_PORT     = env.int("EMAIL_PORT", default=25)
+EMAIL_USE_TLS  = env.bool("EMAIL_USE_TLS",  default=False)
+EMAIL_HOST_USER    = env("EMAIL_HOST_USER",    default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL  = env("DEFAULT_FROM_EMAIL",  default="CardVault <no-reply@cardvault.app>")
+
+# Alert thresholds
+PRICE_SURGE_PCT  = 15   # % rise  → surge notification
+PRICE_DROP_PCT   = 15   # % drop  → drop notification (hunted cards only)
 
 # JustTCG
-JUSTTCG_API_KEY = env("JUSTTCG_API_KEY", default="")
+JUSTTCG_API_KEY  = env("JUSTTCG_API_KEY", default="")
 JUSTTCG_BASE_URL = "https://api.justtcg.com/v1"
