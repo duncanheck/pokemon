@@ -1,0 +1,104 @@
+services:
+  # ── Web (Django + Gunicorn) ─────────────────────────────────────────
+  - type: web
+    name: cardvault
+    runtime: python
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      python manage.py migrate --noinput
+    startCommand: gunicorn cardvault.wsgi --workers 2 --threads 2 --log-file -
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cardvault-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: cardvault.settings
+      - key: JUSTTCG_API_KEY
+        sync: false                 # set manually in Render dashboard
+      - key: DEFAULT_FROM_EMAIL
+        value: "CardVault <no-reply@cardvault.app>"
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.console.EmailBackend
+    plan: free
+
+  # ── Celery worker ───────────────────────────────────────────────────
+  - type: worker
+    name: cardvault-worker
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A cardvault worker --loglevel=info --concurrency=2
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          name: cardvault
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cardvault-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: cardvault.settings
+      - key: DEBUG
+        value: "False"
+      - key: JUSTTCG_API_KEY
+        sync: false
+    plan: free
+
+  # ── Celery beat (scheduler) ─────────────────────────────────────────
+  - type: worker
+    name: cardvault-beat
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A cardvault beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    envVars:
+      - key: SECRET_KEY
+        fromService:
+          name: cardvault
+          type: web
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cardvault-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
+          property: connectionString
+      - key: DJANGO_SETTINGS_MODULE
+        value: cardvault.settings
+      - key: DEBUG
+        value: "False"
+    plan: free
+
+  # ── Redis (cache + Celery broker) ───────────────────────────────────
+  - type: redis
+    name: cardvault-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  # ── PostgreSQL ──────────────────────────────────────────────────────
+  - name: cardvault-db
+    databaseName: cardvault
+    user: cardvault
+    plan: free

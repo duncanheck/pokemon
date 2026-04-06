@@ -1,11 +1,11 @@
+*.egg-info/
 *.pyc
-__pycache__/
 *.pyo
-db.sqlite3
+.DS_Store
 .env
+__pycache__/
+build/
+db.sqlite3
+dist/
 media/
 staticfiles/
-*.egg-info/
-dist/
-build/
-.DS_Store
