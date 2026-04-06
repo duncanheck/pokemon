@@ -10,6 +10,7 @@ urlpatterns = [
     path("", include("apps.accounts.urls")),
     path("cards/", include("apps.cards.urls")),
     path("collection/", include("apps.collection.urls")),
+    path("marketplace/", include("apps.marketplace.urls")),
 ]
 
 if settings.DEBUG:

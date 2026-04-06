@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}My Listings{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <h4 class="mb-0 fw-bold"><i class="bi bi-tags me-2 text-warning"></i>My Listings</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'my_offers' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-inbox me-1"></i>My Offers
+    </a>
+    <a href="{% url 'listing_create' %}" class="btn btn-warning btn-sm fw-semibold">
+      <i class="bi bi-plus-lg me-1"></i>New Listing
+    </a>
+  </div>
+</div>
+
+{% if listings %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+      <thead>
+        <tr class="text-muted small border-secondary">
+          <th>Card</th>
+          <th>Type</th>
+          <th class="text-end">Price</th>
+          <th class="text-end">Offers</th>
+          <th>Status</th>
+          <th>Listed</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for listing in listings %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {% if listing.collection_item.card.image_url %}
+                  <img src="{{ listing.collection_item.card.image_url }}"
+                       style="height:36px;border-radius:4px" alt="">
+                {% endif %}
+                <div>
+                  <div class="small fw-semibold">{{ listing.collection_item.card.name }}</div>
+                  <div class="text-muted" style="font-size:.7rem">
+                    {{ listing.collection_item.card.set_name|truncatechars:20 }}
+                    · {{ listing.collection_item.condition }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge bg-secondary small">{{ listing.get_listing_type_display }}</span></td>
+            <td class="text-end text-warning fw-semibold small">
+              {% if listing.asking_price %}${{ listing.asking_price }}{% else %}—{% endif %}
+            </td>
+            <td class="text-end">
+              {% with cnt=listing.offers.count %}
+                {% if cnt %}
+                  <span class="badge bg-warning text-dark">{{ cnt }}</span>
+                {% else %}
+                  <span class="text-muted small">0</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td>
+              <span class="badge
+                {% if listing.status == 'active' %}bg-success
+                {% elif listing.status == 'reserved' %}bg-warning text-dark
+                {% elif listing.status == 'sold' %}bg-primary
+                {% else %}bg-secondary{% endif %}">
+                {{ listing.get_status_display }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ listing.created_at|date:"M j, Y" }}</td>
+            <td class="text-end">
+              <a href="{% url 'listing_detail' listing.pk %}"
+                 class="btn btn-sm btn-outline-secondary py-0 px-2">View</a>
+              {% if listing.status == "active" %}
+                <a href="{% url 'listing_edit' listing.pk %}"
+                   class="btn btn-sm btn-outline-warning py-0 px-2 ms-1">Edit</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="text-center py-5 stat-card text-muted">
+    <i class="bi bi-tags fs-1 d-block mb-2 opacity-25"></i>
+    No listings yet.
+    <a href="{% url 'listing_create' %}" class="text-warning">List your first card →</a>
+  </div>
+{% endif %}
+{% endblock %}
