@@ -1,42 +1,169 @@
 {% extends "base.html" %}
-{% block title %}CardVault – Track. Trade. Win.{% endblock %}
-{% block layout_class %}container py-5{% endblock %}
+{% block title %}Track. Trade. Profit. — CardVault{% endblock %}
+{% block layout_class %}{% endblock %}
 
 {% block content %}
-<div class="row align-items-center g-5 py-4">
-  <div class="col-lg-6">
-    <h1 class="display-4 fw-bold lh-sm mb-3">
-      Your TCG collection,<br><span style="color:var(--cv-gold)">live &amp; valued.</span>
-    </h1>
-    <p class="lead text-muted mb-4">
-      Track Pokémon, MTG, Yu-Gi-Oh! and more as a live portfolio.
-      Buy, sell, and trade directly with other collectors — no middleman.
-    </p>
-    <div class="d-flex gap-3 flex-wrap">
-      <a href="{% url 'account_signup' %}" class="btn btn-warning btn-lg fw-semibold px-4">
-        <i class="bi bi-safe me-2"></i>Start your vault — free
-      </a>
-      <a href="/marketplace/" class="btn btn-outline-light btn-lg px-4">Browse Market</a>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────── -->
+<section class="hero-section">
+  <div class="container-xl px-3">
+    <div class="row align-items-center g-5">
+
+      <!-- Copy -->
+      <div class="col-lg-6 fade-up">
+        <div class="d-inline-flex align-items-center gap-2 mb-4 px-3 py-1 rounded-pill"
+             style="background:var(--cv-gold-dim);border:1px solid rgba(245,197,24,.2)">
+          <span class="notif-badge pulse" style="position:static;flex-shrink:0"></span>
+          <span style="font-size:.8rem;font-weight:600;color:var(--cv-gold)">Live pricing via JustTCG</span>
+        </div>
+
+        <h1 class="display-hero mb-4">
+          Track. Trade.<br>
+          <span class="gradient-text">Profit.</span>
+        </h1>
+
+        <p class="mb-5" style="font-size:1.1rem;color:#94a3b8;max-width:480px;line-height:1.65">
+          Your Pokémon, MTG, and Yu-Gi-Oh! cards as a live portfolio.
+          See real-time value, get surge alerts, and trade directly —
+          <strong style="color:#fff">no middleman, no fees.</strong>
+        </p>
+
+        <div class="d-flex gap-3 flex-wrap align-items-center">
+          <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-bold">
+            <i class="bi bi-safe me-2"></i>Start free
+          </a>
+          <a href="/marketplace/" class="btn btn-outline-gold btn-lg px-4">
+            Browse market <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+
+        <!-- Social proof -->
+        <div class="d-flex align-items-center gap-4 mt-5 flex-wrap">
+          <div class="text-center">
+            <div class="fw-800" style="font-size:1.4rem;color:#fff">5 TCGs</div>
+            <div style="font-size:.75rem;color:#64748b">Supported</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--cv-border)"></div>
+          <div class="text-center">
+            <div class="fw-800" style="font-size:1.4rem;color:#fff">Live</div>
+            <div style="font-size:.75rem;color:#64748b">Pricing</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--cv-border)"></div>
+          <div class="text-center">
+            <div class="fw-800" style="font-size:1.4rem;color:#fff">P2P</div>
+            <div style="font-size:.75rem;color:#64748b">Marketplace</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero mockup -->
+      <div class="col-lg-6 fade-up fade-up-1 d-none d-lg-block">
+        <div class="hero-mockup">
+          <!-- Mini KPI strip -->
+          <div class="d-flex gap-2 mb-3">
+            <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
+              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+                Portfolio Value
+              </div>
+              <div class="fw-800" style="font-size:1.3rem;color:var(--cv-gold)">$4,218.50</div>
+            </div>
+            <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
+              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+                30d Change
+              </div>
+              <div class="fw-800 gain" style="font-size:1.3rem">+$312.40</div>
+            </div>
+            <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
+              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+                Cards
+              </div>
+              <div class="fw-800" style="font-size:1.3rem;color:#fff">847</div>
+            </div>
+          </div>
+
+          <!-- Card stack -->
+          <div class="hero-card-stack">
+            <div class="hc hc-1">
+              <i class="bi bi-lightning-charge" style="color:#7c3aed"></i>
+            </div>
+            <div class="hc hc-2">
+              <i class="bi bi-fire" style="color:#22c55e"></i>
+            </div>
+            <div class="hc hc-3">
+              <i class="bi bi-stars" style="color:var(--cv-gold)"></i>
+            </div>
+          </div>
+
+          <!-- Alert pill -->
+          <div class="mt-3 rounded-cv p-2 px-3 d-flex align-items-center gap-2"
+               style="background:rgba(0,214,143,.07);border:1px solid rgba(0,214,143,.2)">
+            <i class="bi bi-graph-up-arrow" style="color:var(--cv-green)"></i>
+            <span style="font-size:.8rem;color:var(--cv-green)">
+              <strong>Charizard ex</strong> surged +24% in the last 7 days
+            </span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-  <div class="col-lg-6 text-center">
-    <!-- Placeholder hero graphic — replace with real screenshot in Phase 6 -->
-    <div class="stat-card p-5 rounded-4" style="min-height:280px;display:flex;align-items:center;justify-content:center">
-      <i class="bi bi-safe2 text-warning" style="font-size:6rem;opacity:.6"></i>
+</section>
+
+<!-- ── TCG logos strip ────────────────────────────────────────────── -->
+<div style="border-top:1px solid var(--cv-border);border-bottom:1px solid var(--cv-border);
+            background:var(--cv-surface);padding:.9rem 0">
+  <div class="container-xl px-3">
+    <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
+      <span style="font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.1em">
+        Supported games
+      </span>
+      {% for slug, label in tcg_choices %}
+        <span class="badge badge-tcg-{{ slug }} px-3 py-2" style="font-size:.78rem">{{ label }}</span>
+      {% endfor %}
     </div>
   </div>
 </div>
 
-<!-- Feature row -->
-<div class="row g-4 mt-2">
-  {% for icon, title, desc in features %}
-  <div class="col-md-4">
-    <div class="stat-card p-4 h-100">
-      <i class="bi bi-{{ icon }} fs-2 text-warning mb-3 d-block"></i>
-      <h5 class="fw-bold">{{ title }}</h5>
-      <p class="text-muted small mb-0">{{ desc }}</p>
-    </div>
+<!-- ── Features ──────────────────────────────────────────────────── -->
+<section class="container-xl px-3 py-6" style="padding-top:5rem;padding-bottom:5rem">
+  <div class="text-center mb-5">
+    <h2 class="fw-800 mb-2" style="font-size:clamp(1.6rem,3vw,2.2rem)">
+      Everything a serious collector needs
+    </h2>
+    <p style="color:#64748b;max-width:480px;margin:0 auto">
+      Built by collectors, for collectors. No bloat, just the tools you actually use.
+    </p>
   </div>
-  {% endfor %}
-</div>
+
+  <div class="row g-4">
+    {% for icon, title, desc, color in features %}
+    <div class="col-md-4 fade-up fade-up-{{ forloop.counter }}">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:{{ color }}1a;color:{{ color }}">
+          <i class="bi bi-{{ icon }}"></i>
+        </div>
+        <h5 class="fw-700 mb-2">{{ title }}</h5>
+        <p class="mb-0" style="color:#64748b;font-size:.9rem;line-height:1.6">{{ desc }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ── CTA banner ─────────────────────────────────────────────────── -->
+<section style="background:var(--cv-surface);border-top:1px solid var(--cv-border);
+                border-bottom:1px solid var(--cv-border);padding:4rem 0">
+  <div class="container-xl px-3 text-center">
+    <h2 class="fw-800 mb-3" style="font-size:clamp(1.5rem,3vw,2rem)">
+      Your collection is worth more than you think.
+    </h2>
+    <p class="mb-4" style="color:#64748b">
+      Find out its real market value in under 2 minutes.
+    </p>
+    <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-bold">
+      <i class="bi bi-safe me-2"></i>Create your vault — it's free
+    </a>
+  </div>
+</section>
+
 {% endblock %}
