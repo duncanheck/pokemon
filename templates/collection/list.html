@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% load collection_tags %}
+{% block title %}My Collection{% endblock %}
+
+{% block extra_css %}
+<style>
+  .edit-row { display: none; }
+  .edit-row.show { display: table-row; }
+  .cond-badge-M   { background:#6f42c1 }
+  .cond-badge-NM  { background:#198754 }
+  .cond-badge-LP  { background:#0d6efd }
+  .cond-badge-MP  { background:#ffc107;color:#000 }
+  .cond-badge-HP  { background:#fd7e14 }
+  .cond-badge-DMG { background:#dc3545 }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h4 class="mb-0 fw-bold"><i class="bi bi-collection me-2 text-warning"></i>My Collection</h4>
+    <span class="text-muted small">Portfolio value:
+      <span class="text-warning fw-semibold">${{ portfolio_value|floatformat:2 }}</span>
+    </span>
+  </div>
+  <a href="{% url 'card_search' %}" class="btn btn-warning btn-sm fw-semibold">
+    <i class="bi bi-plus-lg me-1"></i>Add Cards
+  </a>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs border-secondary mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'all' %}active{% else %}text-muted{% endif %}"
+       href="?tab=all">
+      All <span class="badge bg-secondary ms-1">{{ counts.all }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'for_sale' %}active{% else %}text-muted{% endif %}"
+       href="?tab=for_sale">
+      For Sale <span class="badge bg-success ms-1">{{ counts.for_sale }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'want' %}active{% else %}text-muted{% endif %}"
+       href="?tab=want">
+      Want List <span class="badge bg-info ms-1">{{ counts.want }}</span>
+    </a>
+  </li>
+</ul>
+
+{% if items %}
+<div class="table-responsive">
+  <table class="table table-dark table-hover align-middle mb-0">
+    <thead>
+      <tr class="text-muted small border-secondary">
+        <th style="width:48px"></th>
+        <th>Card</th>
+        <th>Set</th>
+        <th>Cond.</th>
+        <th class="text-end">Qty</th>
+        <th class="text-end">Paid</th>
+        <th class="text-end">Market</th>
+        <th class="text-end">P&L</th>
+        <th class="text-center">Flags</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <!-- Main row -->
+      <tr id="row-{{ item.pk }}">
+        <td>
+          {% if item.card.image_url %}
+            <img src="{{ item.card.image_url }}" style="height:40px;border-radius:4px" alt="">
+          {% else %}
+            <div class="bg-secondary rounded" style="height:40px;width:28px"></div>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'card_detail' item.card.tcg_id %}" class="text-decoration-none text-white fw-semibold small">
+            {{ item.card.name }}
+          </a>
+          {% if item.is_foil %}<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem">Foil</span>{% endif %}
+        </td>
+        <td class="text-muted small">{{ item.card.set_name|truncatechars:20 }}</td>
+        <td><span class="badge cond-badge-{{ item.condition }}">{{ item.condition }}</span></td>
+        <td class="text-end small">{{ item.quantity }}</td>
+        <td class="text-end small">
+          {% if item.purchase_price %}${{ item.purchase_price|floatformat:2 }}{% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td class="text-end small fw-semibold">
+          {% if item.current_value %}<span class="text-warning">${{ item.current_value|floatformat:2 }}</span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td class="text-end small">
+          {% if item.gain_loss is not None %}
+            <span class="{% if item.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {% if item.gain_loss >= 0 %}+{% endif %}${{ item.gain_loss|floatformat:2 }}
+            </span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td class="text-center">
+          <!-- for_sale toggle -->
+          <form method="post" action="{% url 'collection_toggle' item.pk %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="field" value="for_sale">
+            <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
+                    title="{{ item.for_sale|yesno:'Remove from sale,Mark for sale' }}">
+              <i class="bi bi-tag{% if item.for_sale %}-fill text-success{% else ' text-muted'%}"></i>
+            </button>
+          </form>
+          <!-- is_hunted toggle -->
+          <form method="post" action="{% url 'collection_toggle' item.pk %}" class="d-inline ms-1">
+            {% csrf_token %}
+            <input type="hidden" name="field" value="is_hunted">
+            <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
+                    title="{{ item.is_hunted|yesno:'Remove from want list,Add to want list' }}">
+              <i class="bi bi-heart{% if item.is_hunted %}-fill text-danger{% else ' text-muted'%}"></i>
+            </button>
+          </form>
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                  onclick="toggleEdit({{ item.pk }})" title="Edit">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger py-0 px-2 ms-1"
+                  onclick="confirmDelete({{ item.pk }}, '{{ item.card.name|escapejs }}')" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      </tr>
+
+      <!-- Inline edit row (hidden by default) -->
+      <tr class="edit-row bg-dark" id="edit-{{ item.pk }}">
+        <td colspan="10" class="py-3 px-3">
+          <form method="post" action="{% url 'collection_update' item.pk %}">
+            {% csrf_token %}
+            {% with form=edit_forms|get_item:item.pk %}
+            <div class="row g-2 align-items-end">
+              <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Condition</label>
+                {{ form.condition }}
+              </div>
+              <div class="col-6 col-md-1">
+                <label class="form-label small fw-semibold mb-1">Qty</label>
+                {{ form.quantity }}
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Paid ($)</label>
+                {{ form.purchase_price }}
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Date</label>
+                {{ form.purchase_date }}
+              </div>
+              <div class="col-12 col-md-3 d-flex gap-3 align-items-center">
+                <div class="form-check">{{ form.is_foil }}<label class="form-check-label small ms-1">Foil</label></div>
+                <div class="form-check">{{ form.for_sale }}<label class="form-check-label small ms-1">For Sale</label></div>
+                <div class="form-check">{{ form.is_hunted }}<label class="form-check-label small ms-1">Want</label></div>
+              </div>
+              <div class="col-12 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Notes</label>
+                {{ form.notes }}
+              </div>
+              <div class="col-12 d-flex gap-2 mt-1">
+                <button type="submit" class="btn btn-warning btn-sm fw-semibold">Save</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        onclick="toggleEdit({{ item.pk }})">Cancel</button>
+              </div>
+            </div>
+            {% endwith %}
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted stat-card">
+  <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+  {% if tab == 'want' %}No cards on your want list yet.
+  {% elif tab == 'for_sale' %}No cards marked for sale.
+  {% else %}Your vault is empty. <a href="{% url 'card_search' %}" class="text-warning">Search for cards</a> to add them.
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content bg-dark border border-secondary">
+      <div class="modal-body text-center py-4">
+        <i class="bi bi-exclamation-triangle fs-1 text-danger mb-2 d-block"></i>
+        <p class="mb-0">Remove <strong id="deleteCardName"></strong> from your collection?</p>
+      </div>
+      <div class="modal-footer border-secondary justify-content-center gap-2">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleEdit(pk) {
+  const row = document.getElementById("edit-" + pk);
+  row.classList.toggle("show");
+}
+function confirmDelete(pk, name) {
+  document.getElementById("deleteCardName").textContent = name;
+  document.getElementById("deleteForm").action = "/collection/" + pk + "/delete/";
+  new bootstrap.Modal(document.getElementById("deleteModal")).show();
+}
+</script>
+{% endblock %}

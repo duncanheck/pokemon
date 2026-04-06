@@ -15,12 +15,12 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{% url 'collection_list' %}">
             <i class="bi bi-collection me-2"></i>My Collection
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{% url 'collection_list' %}?tab=want">
             <i class="bi bi-heart me-2"></i>Want List
             {% if want_count %}
               <span class="badge bg-warning text-dark ms-1">{{ want_count }}</span>
@@ -28,7 +28,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="{% url 'collection_list' %}?tab=for_sale">
             <i class="bi bi-tag me-2"></i>For Sale
             {% if for_sale_count %}
               <span class="badge bg-success ms-1">{{ for_sale_count }}</span>
@@ -36,7 +36,7 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">
+          <a class="nav-link" href="/marketplace/">
             <i class="bi bi-shop me-2"></i>Marketplace
           </a>
         </li>
@@ -63,7 +63,7 @@
         <h4 class="mb-0 fw-bold">Hey, {{ user.username }} 👋</h4>
         <span class="text-muted small">{{ user.get_preferred_tcg_display }} collector</span>
       </div>
-      <a href="#" class="btn btn-warning btn-sm fw-semibold">
+      <a href="{% url 'card_search' %}" class="btn btn-warning btn-sm fw-semibold">
         <i class="bi bi-plus-lg me-1"></i>Add Cards
       </a>
     </div>
@@ -194,7 +194,71 @@
         </div>
       </div>
 
+      <!-- Portfolio value chart -->
+      <div class="col-12">
+        <div class="stat-card p-3">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h6 class="fw-semibold mb-0">
+              <i class="bi bi-graph-up-arrow me-2 text-warning"></i>Portfolio Value Trend
+            </h6>
+            <a href="{% url 'collection_list' %}" class="btn btn-outline-warning btn-sm">
+              <i class="bi bi-collection me-1"></i>Manage Collection
+            </a>
+          </div>
+          <canvas id="portfolioChart" height="80"></canvas>
+          <p class="text-muted mt-2 mb-0" style="font-size:.7rem">
+            Historical tracking starts once daily snapshots are enabled (Phase 5).
+            Showing placeholder trend.
+          </p>
+        </div>
+      </div>
+
     </div><!-- /row -->
   </div><!-- /main -->
 </div><!-- /row -->
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+  // Placeholder data — replaced by real snapshots in Phase 5
+  const labels = Array.from({length: 30}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (29 - i));
+    return d.toLocaleDateString("en-US", {month:"short", day:"numeric"});
+  });
+  const base = parseFloat("{{ portfolio_value|default:'0' }}") || 100;
+  // Simulate slight fluctuation around current value
+  const data = labels.map((_, i) =>
+    +(base * (0.88 + 0.15 * (i / 29) + (Math.random() - 0.5) * 0.06)).toFixed(2)
+  );
+  data[data.length - 1] = base; // pin last point to real value
+
+  new Chart(document.getElementById("portfolioChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Portfolio Value ($)",
+        data,
+        borderColor: "#f5c842",
+        backgroundColor: "rgba(245,200,66,.08)",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: "#2a2a3f" }, ticks: { color: "#6c757d", maxTicksLimit: 6 } },
+        y: { grid: { color: "#2a2a3f" }, ticks: { color: "#6c757d",
+             callback: v => "$" + v.toLocaleString() } },
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

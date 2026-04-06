@@ -3,6 +3,7 @@ from django.db.models import Count, Sum
 from django.shortcuts import render, get_object_or_404
 
 from apps.collection.models import CollectionItem
+from apps.collection.views import _portfolio_value
 from .models import User
 
 
@@ -53,7 +54,7 @@ def dashboard(request):
         "for_sale_count": for_sale_count,
         "recent": recent,
         "top_value": top_value,
-        "portfolio_value": user.total_collection_value,
+        "portfolio_value": _portfolio_value(user),
     }
     return render(request, "dashboard/index.html", context)
 

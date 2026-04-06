@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ card.name|default:tcg_id }}{% endblock %}
+
+{% block content %}
+{% if card %}
+<div class="row g-4">
+  <!-- Card image -->
+  <div class="col-md-3 text-center">
+    {% if card.image_url_hi or card.image_url %}
+      <img src="{{ card.image_url_hi|default:card.image_url }}" alt="{{ card.name }}"
+           class="img-fluid rounded-3 shadow" style="max-height:380px">
+    {% endif %}
+  </div>
+
+  <!-- Details -->
+  <div class="col-md-5">
+    <div class="mb-1">
+      <span class="badge badge-tcg-{{ card.tcg }}">{{ card.get_tcg_display }}</span>
+      {% if card.rarity %}<span class="badge bg-secondary ms-1">{{ card.get_rarity_display }}</span>{% endif %}
+    </div>
+    <h2 class="fw-bold mb-0">{{ card.name }}</h2>
+    <p class="text-muted">{{ card.set_name }}{% if card.number %} · #{{ card.number }}{% endif %}</p>
+
+    <table class="table table-dark table-sm" style="max-width:320px">
+      <tr><td class="text-muted">Market</td><td class="fw-bold text-warning">${{ card.market_price|default:"—" }}</td></tr>
+      <tr><td class="text-muted">Low</td>   <td>${{ card.low_price|default:"—" }}</td></tr>
+      <tr><td class="text-muted">High</td>  <td>${{ card.high_price|default:"—" }}</td></tr>
+      <tr><td class="text-muted">Foil</td>  <td>${{ card.foil_price|default:"—" }}</td></tr>
+    </table>
+    <p class="text-muted" style="font-size:.75rem">
+      Prices updated: {{ card.price_updated_at|date:"M j, Y g:i a"|default:"never" }}
+    </p>
+  </div>
+
+  <!-- Add to Collection -->
+  {% if user.is_authenticated %}
+  <div class="col-md-4">
+    <div class="stat-card p-3">
+      <h6 class="fw-semibold mb-3"><i class="bi bi-plus-circle me-2 text-warning"></i>Add to Collection</h6>
+      <form method="post" action="{% url 'add_to_collection' %}">
+        {% csrf_token %}
+        <input type="hidden" name="card_tcg_id" value="{{ card.tcg_id }}">
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        {{ add_form.as_p }}
+        <button type="submit" class="btn btn-warning w-100 fw-semibold">
+          <i class="bi bi-plus-lg me-1"></i>Add
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-question-circle fs-1 d-block mb-2 opacity-25"></i>
+    Card not found locally. <a href="{% url 'card_search' %}" class="text-warning">Search for it</a>.
+  </div>
+{% endif %}
+{% endblock %}

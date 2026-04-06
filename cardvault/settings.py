@@ -60,6 +60,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "cardvault.wsgi.application"
 
+# Cache — Redis in production, local-memory fallback for dev
+_redis_url = env("REDIS_URL", default="")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
+    }
+else:
+    CACHES = {
+        "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+    }
+
 # Database — falls back to SQLite for local dev without .env
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR}/db.sqlite3")

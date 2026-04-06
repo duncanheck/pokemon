@@ -8,7 +8,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("", include("apps.accounts.urls")),
-    # Phase 3+: cards, collection, marketplace
+    path("cards/", include("apps.cards.urls")),
+    path("collection/", include("apps.collection.urls")),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Card Search{% endblock %}
+
+{% block content %}
+<!-- Search bar -->
+<div class="row justify-content-center mb-4">
+  <div class="col-lg-8">
+    <form method="get" action="{% url 'card_search' %}" class="d-flex gap-2 flex-wrap">
+      <select name="tcg" class="form-select form-select-sm bg-dark border-secondary text-light" style="max-width:160px">
+        <option value="">All Games</option>
+        {% for val, label in TCG_CHOICES %}
+          <option value="{{ val }}" {% if tcg == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <div class="input-group flex-grow-1">
+        <input type="search" name="q" value="{{ query }}"
+               class="form-control bg-dark border-secondary text-light"
+               placeholder="Search cards — e.g. Charizard, Black Lotus…"
+               autofocus>
+        <button class="btn btn-warning fw-semibold px-4" type="submit">
+          <i class="bi bi-search me-1"></i>Search
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if error %}
+  <div class="alert alert-warning alert-dismissible fade show">
+    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if query %}
+  <p class="text-muted small mb-3">
+    {% if total %}{{ total }} result{{ total|pluralize }} for <strong>{{ query }}</strong>{% else %}No results for <strong>{{ query }}</strong>{% endif %}
+  </p>
+{% endif %}
+
+<!-- Results grid -->
+{% if results %}
+  <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-4">
+    {% for card in results %}
+      <div class="col">
+        <div class="h-100 bg-dark border border-secondary rounded-3 p-2 d-flex flex-column align-items-center text-center position-relative">
+          {% if card.image_url %}
+            <img src="{{ card.image_url }}" alt="{{ card.name }}"
+                 class="img-fluid rounded-2 mb-2" style="max-height:140px;object-fit:contain">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-secondary rounded-2 mb-2"
+                 style="height:140px;width:100%">
+              <i class="bi bi-card-image fs-1 text-muted"></i>
+            </div>
+          {% endif %}
+
+          <div class="small fw-semibold text-truncate w-100">{{ card.name }}</div>
+          <div class="text-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
+
+          {% if card.market_price %}
+            <div class="text-warning fw-semibold small mb-2">${{ card.market_price }}</div>
+          {% endif %}
+
+          {% if user.is_authenticated %}
+            <button type="button"
+                    class="btn btn-outline-warning btn-sm mt-auto w-100"
+                    data-add-card
+                    data-tcg-id="{{ card.tcg_id }}"
+                    data-tcg="{{ card.tcg }}"
+                    data-name="{{ card.name }}"
+                    data-set-name="{{ card.set_name }}"
+                    data-image-url="{{ card.image_url }}"
+                    data-price="{{ card.market_price|default:'' }}">
+              <i class="bi bi-plus-lg me-1"></i>Add
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  <div class="d-flex gap-2 justify-content-center">
+    {% if page > 1 %}
+      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"-1" }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-chevron-left"></i> Prev
+      </a>
+    {% endif %}
+    {% if has_next %}
+      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"1" }}" class="btn btn-outline-warning btn-sm">
+        Next <i class="bi bi-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+{% elif query %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-search fs-1 d-block mb-2 opacity-25"></i>
+    No cards found. Try a different name or filter.
+  </div>
+{% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2 opacity-25"></i>
+    Search for any card across all supported TCGs.
+  </div>
+{% endif %}
+
+{% if user.is_authenticated %}
+  {% include "partials/add_to_collection_modal.html" %}
+{% endif %}
+{% endblock %}
