@@ -7,6 +7,11 @@ databases:
     user: cardvault
 
 services:
+  - type: redis
+    name: cardvault-redis
+    plan: free
+    ipAllowList: []
+
   - type: web
     name: cardvault-web
     env: python
@@ -26,6 +31,11 @@ services:
         fromDatabase:
           name: cardvault-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
+          property: connectionString
 
   - type: worker
     name: cardvault-worker
@@ -43,6 +53,11 @@ services:
         fromDatabase:
           name: cardvault-db
           property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
+          property: connectionString
 
   - type: worker
     name: cardvault-beat
@@ -59,4 +74,9 @@ services:
       - key: DATABASE_URL
         fromDatabase:
           name: cardvault-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: cardvault-redis
+          type: redis
           property: connectionString
