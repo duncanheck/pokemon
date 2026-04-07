@@ -109,7 +109,7 @@
             <input type="hidden" name="field" value="for_sale">
             <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
                     title="{{ item.for_sale|yesno:'Remove from sale,Mark for sale' }}">
-              <i class="bi bi-tag{% if item.for_sale %}-fill text-success{% else ' text-muted'%}"></i>
+              <i class="bi bi-tag{% if item.for_sale %}-fill text-success{% else %} text-muted{% endif %}"></i>
             </button>
           </form>
           <!-- is_hunted toggle -->
@@ -118,7 +118,7 @@
             <input type="hidden" name="field" value="is_hunted">
             <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent"
                     title="{{ item.is_hunted|yesno:'Remove from want list,Add to want list' }}">
-              <i class="bi bi-heart{% if item.is_hunted %}-fill text-danger{% else ' text-muted'%}"></i>
+              <i class="bi bi-heart{% if item.is_hunted %}-fill text-danger{% else %} text-muted{% endif %}"></i>
             </button>
           </form>
         </td>
