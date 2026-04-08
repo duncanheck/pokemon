@@ -17,7 +17,6 @@ API_TIMEOUT = 8
 
 
 def _headers() -> dict:
-    """JustTCG wants x-api-key header"""
     key = settings.JUSTTCG_API_KEY
     if not key:
         logger.warning("JUSTTCG_API_KEY is missing!")
