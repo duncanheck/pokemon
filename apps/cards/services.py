@@ -1,6 +1,5 @@
 """
 JustTCG API client + caching layer.
-All external HTTP calls go through this module so views stay clean.
 """
 
 import logging
@@ -12,26 +11,23 @@ from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
-PRICE_CACHE_TTL = 60 * 60 * 4   # 4 hours
-SEARCH_CACHE_TTL = 60 * 30      # 30 minutes
-API_TIMEOUT = 8                 # seconds
+PRICE_CACHE_TTL = 60 * 60 * 4  # 4 hours
+SEARCH_CACHE_TTL = 60 * 30     # 30 minutes
+API_TIMEOUT = 8
 
 
 def _headers() -> dict:
-    """Return correct headers for JustTCG API (uses x-api-key)"""
-    if not settings.JUSTTCG_API_KEY:
-        logger.warning("JUSTTCG_API_KEY is missing or empty!")
+    """JustTCG wants x-api-key header"""
+    key = settings.JUSTTCG_API_KEY
+    if not key:
+        logger.warning("JUSTTCG_API_KEY is missing!")
     return {
-        "x-api-key": settings.JUSTTCG_API_KEY,
+        "x-api-key": key,
         "Accept": "application/json"
     }
 
 
 def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
-    """
-    Search JustTCG API. Returns {'results': [...], 'total': int, 'error': str|None}.
-    Falls back to local DB search when API key is absent or request fails.
-    """
     if not query.strip():
         return {"results": [], "total": 0, "error": None}
 
@@ -40,9 +36,8 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
     if cached is not None:
         return cached
 
-    # If no API key, search local DB only
     if not settings.JUSTTCG_API_KEY:
-        logger.warning("No JUSTTCG_API_KEY found - using local search only")
+        logger.warning("No API key - falling back to local DB")
         return _local_search(query, tcg)
 
     params = {"q": query, "page": page, "pageSize": 24}
@@ -59,7 +54,6 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
         resp.raise_for_status()
         data = resp.json()
 
-        # Normalise API response
         result = {
             "results": [_normalise_card(c) for c in data.get("data", [])],
             "total": data.get("total", 0),
@@ -68,31 +62,26 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
         cache.set(cache_key, result, SEARCH_CACHE_TTL)
         return result
 
-    except requests.Timeout:
-        logger.warning("JustTCG search timeout for query=%s", query)
-        return {**_local_search(query, tcg), "error": "Pricing service slow — showing local results."}
-
     except requests.HTTPError as e:
-        logger.error("JustTCG HTTP error %s for query=%s", e, query)
-        # If it's still 401, log extra info
         if e.response and e.response.status_code == 401:
-            logger.error("401 Unauthorized - Check that JUSTTCG_API_KEY is correctly set in Render")
+            logger.error("401 from JustTCG - check API key and header")
+        else:
+            logger.error("JustTCG HTTP error: %s", e)
         return {**_local_search(query, tcg), "error": "Pricing service unavailable."}
 
     except Exception as e:
-        logger.exception("JustTCG unexpected error: %s", e)
-        return {**_local_search(query, tcg), "error": "Unexpected error fetching results."}
+        logger.exception("JustTCG error: %s", e)
+        return {**_local_search(query, tcg), "error": "Unexpected error."}
 
 
 def get_card_prices(tcg_id: str) -> dict | None:
-    """Fetch fresh prices for a single card by its JustTCG ID."""
+    if not settings.JUSTTCG_API_KEY:
+        return None
+
     cache_key = f"jtcg_prices:{tcg_id}"
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
-
-    if not settings.JUSTTCG_API_KEY:
-        return None
 
     try:
         resp = requests.get(
@@ -102,7 +91,6 @@ def get_card_prices(tcg_id: str) -> dict | None:
         )
         resp.raise_for_status()
         data = resp.json().get("data", {})
-
         prices = {
             "market_price": _to_decimal(data.get("market")),
             "low_price": _to_decimal(data.get("low")),
@@ -113,43 +101,26 @@ def get_card_prices(tcg_id: str) -> dict | None:
         cache.set(cache_key, prices, PRICE_CACHE_TTL)
         return prices
     except Exception as e:
-        logger.warning("Failed to fetch prices for %s: %s", tcg_id, e)
+        logger.warning("Price fetch failed for %s: %s", tcg_id, e)
         return None
 
 
-def refresh_card_prices_in_db(card) -> bool:
-    """Pull fresh prices for a Card instance and save. Returns True on success."""
-    from apps.cards.models import Card  # avoid circular import
-    prices = get_card_prices(card.tcg_id)
-    if prices is None:
-        return False
-    Card.objects.filter(pk=card.pk).update(**prices, price_updated_at=timezone.now())
-    return True
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
+# Keep the rest of your helper functions exactly as they were
 def _local_search(query: str, tcg: str = "") -> dict:
-    """Fallback: hit the local Card table."""
     from apps.cards.models import Card
     qs = Card.objects.filter(name__icontains=query)
     if tcg:
         qs = qs.filter(tcg=tcg)
-
     cards = list(qs.values(
         "id", "tcg_id", "tcg", "name", "set_name", "number",
         "rarity", "image_url", "market_price", "foil_price",
     )[:48])
-
-    # Tag so templates know it's local fallback
     for c in cards:
         c["_source"] = "local"
-
     return {"results": cards, "total": len(cards), "error": None}
 
 
 def _normalise_card(api_card: dict) -> dict:
-    """Flatten JustTCG API card shape into CardVault's internal dict shape."""
     images = api_card.get("images", {})
     prices = api_card.get("prices", {})
     return {
@@ -175,16 +146,22 @@ def _to_decimal(value) -> Decimal | None:
         return None
 
 
+def refresh_card_prices_in_db(card) -> bool:
+    from apps.cards.models import Card
+    prices = get_card_prices(card.tcg_id)
+    if prices is None:
+        return False
+    Card.objects.filter(pk=card.pk).update(**prices, price_updated_at=timezone.now())
+    return True
+
+
 def get_or_create_card_from_api_data(data: dict):
-    """Upsert a Card row from a normalised API dict."""
     from apps.cards.models import Card
     tcg_id = data.get("tcg_id", "").strip()
     if not tcg_id:
         return None, False
-
     defaults = {k: v for k, v in data.items()
                 if k in {f.name for f in Card._meta.get_fields()} and k != "tcg_id"}
     defaults.pop("_source", None)
     defaults["price_updated_at"] = timezone.now()
-
     return Card.objects.update_or_create(tcg_id=tcg_id, defaults=defaults)
