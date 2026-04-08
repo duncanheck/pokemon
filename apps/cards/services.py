@@ -2,9 +2,9 @@
 JustTCG API client + caching layer.
 All external HTTP calls go through this module so views stay clean.
 """
+
 import logging
 from decimal import Decimal
-
 import requests
 from django.conf import settings
 from django.core.cache import cache
@@ -13,12 +13,18 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 PRICE_CACHE_TTL = 60 * 60 * 4   # 4 hours
-SEARCH_CACHE_TTL = 60 * 30       # 30 minutes
-API_TIMEOUT = 8                  # seconds
+SEARCH_CACHE_TTL = 60 * 30      # 30 minutes
+API_TIMEOUT = 8                 # seconds
 
 
 def _headers() -> dict:
-    return {"Authorization": f"Bearer {settings.JUSTTCG_API_KEY}", "Accept": "application/json"}
+    """Return correct headers for JustTCG API (uses x-api-key)"""
+    if not settings.JUSTTCG_API_KEY:
+        logger.warning("JUSTTCG_API_KEY is missing or empty!")
+    return {
+        "x-api-key": settings.JUSTTCG_API_KEY,
+        "Accept": "application/json"
+    }
 
 
 def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
@@ -36,6 +42,7 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
 
     # If no API key, search local DB only
     if not settings.JUSTTCG_API_KEY:
+        logger.warning("No JUSTTCG_API_KEY found - using local search only")
         return _local_search(query, tcg)
 
     params = {"q": query, "page": page, "pageSize": 24}
@@ -52,7 +59,7 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
         resp.raise_for_status()
         data = resp.json()
 
-        # Normalise API response → common shape
+        # Normalise API response
         result = {
             "results": [_normalise_card(c) for c in data.get("data", [])],
             "total": data.get("total", 0),
@@ -64,19 +71,21 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
     except requests.Timeout:
         logger.warning("JustTCG search timeout for query=%s", query)
         return {**_local_search(query, tcg), "error": "Pricing service slow — showing local results."}
+
     except requests.HTTPError as e:
-        logger.error("JustTCG HTTP error %s", e)
+        logger.error("JustTCG HTTP error %s for query=%s", e, query)
+        # If it's still 401, log extra info
+        if e.response and e.response.status_code == 401:
+            logger.error("401 Unauthorized - Check that JUSTTCG_API_KEY is correctly set in Render")
         return {**_local_search(query, tcg), "error": "Pricing service unavailable."}
+
     except Exception as e:
         logger.exception("JustTCG unexpected error: %s", e)
         return {**_local_search(query, tcg), "error": "Unexpected error fetching results."}
 
 
 def get_card_prices(tcg_id: str) -> dict | None:
-    """
-    Fetch fresh prices for a single card by its JustTCG ID.
-    Returns a price dict or None on failure.
-    """
+    """Fetch fresh prices for a single card by its JustTCG ID."""
     cache_key = f"jtcg_prices:{tcg_id}"
     cached = cache.get(cache_key)
     if cached is not None:
@@ -93,16 +102,16 @@ def get_card_prices(tcg_id: str) -> dict | None:
         )
         resp.raise_for_status()
         data = resp.json().get("data", {})
+
         prices = {
             "market_price": _to_decimal(data.get("market")),
-            "low_price":    _to_decimal(data.get("low")),
-            "mid_price":    _to_decimal(data.get("mid")),
-            "high_price":   _to_decimal(data.get("high")),
-            "foil_price":   _to_decimal(data.get("foilMarket")),
+            "low_price": _to_decimal(data.get("low")),
+            "mid_price": _to_decimal(data.get("mid")),
+            "high_price": _to_decimal(data.get("high")),
+            "foil_price": _to_decimal(data.get("foilMarket")),
         }
         cache.set(cache_key, prices, PRICE_CACHE_TTL)
         return prices
-
     except Exception as e:
         logger.warning("Failed to fetch prices for %s: %s", tcg_id, e)
         return None
@@ -110,7 +119,7 @@ def get_card_prices(tcg_id: str) -> dict | None:
 
 def refresh_card_prices_in_db(card) -> bool:
     """Pull fresh prices for a Card instance and save. Returns True on success."""
-    from apps.cards.models import Card  # avoid circular at module level
+    from apps.cards.models import Card  # avoid circular import
     prices = get_card_prices(card.tcg_id)
     if prices is None:
         return False
@@ -126,13 +135,16 @@ def _local_search(query: str, tcg: str = "") -> dict:
     qs = Card.objects.filter(name__icontains=query)
     if tcg:
         qs = qs.filter(tcg=tcg)
+
     cards = list(qs.values(
         "id", "tcg_id", "tcg", "name", "set_name", "number",
         "rarity", "image_url", "market_price", "foil_price",
     )[:48])
-    # Tag so templates know it's local
+
+    # Tag so templates know it's local fallback
     for c in cards:
         c["_source"] = "local"
+
     return {"results": cards, "total": len(cards), "error": None}
 
 
@@ -141,18 +153,18 @@ def _normalise_card(api_card: dict) -> dict:
     images = api_card.get("images", {})
     prices = api_card.get("prices", {})
     return {
-        "tcg_id":       api_card.get("id", ""),
-        "tcg":          api_card.get("game", ""),
-        "name":         api_card.get("name", ""),
-        "set_name":     api_card.get("setName", ""),
-        "set_code":     api_card.get("setCode", ""),
-        "number":       api_card.get("number", ""),
-        "rarity":       api_card.get("rarity", ""),
-        "image_url":    images.get("small", ""),
+        "tcg_id": api_card.get("id", ""),
+        "tcg": api_card.get("game", ""),
+        "name": api_card.get("name", ""),
+        "set_name": api_card.get("setName", ""),
+        "set_code": api_card.get("setCode", ""),
+        "number": api_card.get("number", ""),
+        "rarity": api_card.get("rarity", ""),
+        "image_url": images.get("small", ""),
         "image_url_hi": images.get("large", ""),
         "market_price": _to_decimal(prices.get("market")),
-        "foil_price":   _to_decimal(prices.get("foilMarket")),
-        "_source":      "api",
+        "foil_price": _to_decimal(prices.get("foilMarket")),
+        "_source": "api",
     }
 
 
@@ -164,10 +176,7 @@ def _to_decimal(value) -> Decimal | None:
 
 
 def get_or_create_card_from_api_data(data: dict):
-    """
-    Upsert a Card row from a normalised API dict.
-    Returns (card_instance, created).
-    """
+    """Upsert a Card row from a normalised API dict."""
     from apps.cards.models import Card
     tcg_id = data.get("tcg_id", "").strip()
     if not tcg_id:
