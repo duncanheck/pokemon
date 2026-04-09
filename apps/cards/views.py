@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import Card
-from .services import search_cards, get_or_create_card_from_api_data
+from .services import search_cards, get_or_create_card_from_api_data, refresh_card_prices_in_db
 from apps.collection.forms import AddToCollectionForm
 
 
@@ -32,6 +32,9 @@ def card_search(request):
 def card_detail(request, tcg_id):
     """Show card detail + add-to-collection form. Creates DB row if not yet synced."""
     card = Card.objects.filter(tcg_id=tcg_id).first()
+    if card:
+        refresh_card_prices_in_db(card)
+        card.refresh_from_db()
     add_form = AddToCollectionForm(initial={"card_tcg_id": tcg_id})
     context = {"card": card, "tcg_id": tcg_id, "add_form": add_form}
     return render(request, "cards/detail.html", context)
