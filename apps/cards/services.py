@@ -105,6 +105,9 @@ def get_card_by_id(tcg_id: str) -> dict | None:
 
 
 def get_card_prices(tcg_id: str) -> dict | None:
+    # Correct endpoint: GET /cards?cardId={slug}
+    # Response: {"data": [{"prices": {...}, "variants": [{"prices": {...}}]}]}
+    # We use first variant's prices when present, else card-level prices.
     if not settings.JUSTTCG_API_KEY:
         return None
 
@@ -115,21 +118,32 @@ def get_card_prices(tcg_id: str) -> dict | None:
 
     try:
         resp = requests.get(
-            f"{settings.JUSTTCG_BASE_URL}/cards/{tcg_id}/prices",
+            f"{settings.JUSTTCG_BASE_URL}/cards",
+            params={"cardId": tcg_id},
             headers=_headers(),
             timeout=API_TIMEOUT,
         )
         resp.raise_for_status()
-        data = resp.json().get("data", {})
+        data_list = resp.json().get("data", [])
+        if not data_list:
+            logger.warning("Price fetch for %s: empty data", tcg_id)
+            return None
+        card_data   = data_list[0]
+        variants    = card_data.get("variants", [])
+        prices_raw  = variants[0].get("prices", {}) if variants else card_data.get("prices", {})
         prices = {
-            "market_price": _to_decimal(data.get("market")),
-            "low_price": _to_decimal(data.get("low")),
-            "mid_price": _to_decimal(data.get("mid")),
-            "high_price": _to_decimal(data.get("high")),
-            "foil_price": _to_decimal(data.get("foilMarket")),
+            "market_price": _to_decimal(prices_raw.get("market")),
+            "low_price":    _to_decimal(prices_raw.get("low")),
+            "mid_price":    _to_decimal(prices_raw.get("mid")),
+            "high_price":   _to_decimal(prices_raw.get("high")),
+            "foil_price":   _to_decimal(prices_raw.get("foilMarket")),
         }
         cache.set(cache_key, prices, PRICE_CACHE_TTL)
         return prices
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response else "?"
+        logger.warning("Price fetch %s → HTTP %s: %s", tcg_id, status, e)
+        return None
     except Exception as e:
         logger.warning("Price fetch failed for %s: %s", tcg_id, e)
         return None
