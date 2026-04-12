@@ -66,7 +66,7 @@ def _refresh_single_card(card):
     """Fetch fresh prices, record history, detect alerts, persist to DB."""
     from apps.cards.models import Card, CardPriceHistory
 
-    prices = get_card_prices(card.tcg_id)
+    prices = get_card_prices(card.tcg_id, card_name=card.name, set_name=card.set_name, tcg=card.tcg)
     if not prices:
         return
 

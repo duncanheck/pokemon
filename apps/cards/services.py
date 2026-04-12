@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 PRICE_CACHE_TTL = 60 * 60 * 4  # 4 hours
 SEARCH_CACHE_TTL = 60 * 30     # 30 minutes
 API_TIMEOUT = 8
+_CACHE_MISS = object()  # sentinel: distinguishes "not in cache" from a cached None (404)
 
 
 def _headers() -> dict:
@@ -104,17 +105,23 @@ def get_card_by_id(tcg_id: str) -> dict | None:
         return None
 
 
-def get_card_prices(tcg_id: str) -> dict | None:
-    # Correct endpoint: GET /cards?cardId={slug}
-    # Response: {"data": [{"prices": {...}, "variants": [{"prices": {...}}]}]}
-    # We use first variant's prices when present, else card-level prices.
-    if not settings.JUSTTCG_API_KEY:
+def get_card_prices(tcg_id: str, *, card_name: str = "", set_name: str = "", tcg: str = "") -> dict | None:
+    """Primary: GET https://api.justtcg.com/v1/cards?cardId={slug}
+    Fallback (Pokémon only): https://api.pokemontcg.io/v2/cards on 400/404 or empty price.
+    JustTCG alt param: ?tcgplayerId={tcgplayer_id}
+    """
+    # Guard: empty tcg_id would hit /cards without cardId → JustTCG returns 400 "browse" error
+    if not tcg_id or not tcg_id.strip():
+        logger.warning("get_card_prices: empty tcg_id – skipping API call")
         return None
 
+    if not settings.JUSTTCG_API_KEY:
+        return get_pokemon_prices_fallback(card_name, set_name) if tcg == "pokemon" and card_name else None
+
     cache_key = f"jtcg_prices:{tcg_id}"
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
+    cached = cache.get(cache_key, _CACHE_MISS)
+    if cached is not _CACHE_MISS:
+        return cached  # None = known 404 (don't retry); dict = valid prices
 
     try:
         resp = requests.get(
@@ -126,8 +133,10 @@ def get_card_prices(tcg_id: str) -> dict | None:
         resp.raise_for_status()
         data_list = resp.json().get("data", [])
         if not data_list:
-            logger.warning("Price fetch for %s: empty data", tcg_id)
-            return None
+            logger.warning("Price fetch %s: no data in JustTCG response", tcg_id)
+            result = get_pokemon_prices_fallback(card_name, set_name) if tcg == "pokemon" and card_name else None
+            cache.set(cache_key, result, PRICE_CACHE_TTL)
+            return result
         card_data   = data_list[0]
         variants    = card_data.get("variants", [])
         prices_raw  = variants[0].get("prices", {}) if variants else card_data.get("prices", {})
@@ -138,14 +147,65 @@ def get_card_prices(tcg_id: str) -> dict | None:
             "high_price":   _to_decimal(prices_raw.get("high")),
             "foil_price":   _to_decimal(prices_raw.get("foilMarket")),
         }
+        # No market price in JustTCG → try pokemontcg.io fallback for Pokémon cards
+        if not prices["market_price"] and tcg == "pokemon" and card_name:
+            fb = get_pokemon_prices_fallback(card_name, set_name)
+            if fb:
+                cache.set(cache_key, fb, PRICE_CACHE_TTL)
+                return fb
         cache.set(cache_key, prices, PRICE_CACHE_TTL)
         return prices
     except requests.HTTPError as e:
         status = e.response.status_code if e.response else "?"
-        logger.warning("Price fetch %s → HTTP %s: %s", tcg_id, status, e)
-        return None
+        logger.warning("Price fetch %s → HTTP %s (logged once; result cached)", tcg_id, status)
+        fallback = None
+        if status in (400, 404) and tcg == "pokemon" and card_name:
+            fallback = get_pokemon_prices_fallback(card_name, set_name)
+        cache.set(cache_key, fallback, PRICE_CACHE_TTL)  # cache to prevent retry storms
+        return fallback
     except Exception as e:
         logger.warning("Price fetch failed for %s: %s", tcg_id, e)
+        return None
+
+
+def get_pokemon_prices_fallback(name: str, set_name: str = "") -> dict | None:
+    """Fallback via https://api.pokemontcg.io/v2/cards — no API key required.
+    Called when JustTCG returns 400/404 or no market price for a Pokémon card.
+    """
+    if not name:
+        return None
+    cache_key = f"ptcg_prices:{name.lower()}:{set_name.lower()}"
+    cached = cache.get(cache_key, _CACHE_MISS)
+    if cached is not _CACHE_MISS:
+        return cached
+    try:
+        q = f'name:"{name}"' + (f' set.name:"{set_name}"' if set_name else "")
+        resp = requests.get(
+            "https://api.pokemontcg.io/v2/cards",
+            params={"q": q, "pageSize": 5, "select": "id,name,tcgplayer"},
+            timeout=API_TIMEOUT,
+        )
+        resp.raise_for_status()
+        result = None
+        for card in resp.json().get("data", []):
+            p_map = card.get("tcgplayer", {}).get("prices", {})
+            for variant in ("holofoil", "normal", "1stEditionHolofoil", "reverseHolofoil"):
+                p = p_map.get(variant) or {}
+                if p.get("market"):
+                    result = {
+                        "market_price": _to_decimal(p["market"]),
+                        "low_price":    _to_decimal(p.get("low")),
+                        "mid_price":    _to_decimal(p.get("mid")),
+                        "high_price":   _to_decimal(p.get("high")),
+                        "foil_price":   _to_decimal(p["market"]) if "holofoil" in variant.lower() else None,
+                    }
+                    break
+            if result:
+                break
+        cache.set(cache_key, result, PRICE_CACHE_TTL)
+        return result
+    except Exception as e:
+        logger.warning("pokemontcg.io fallback failed for '%s': %s", name, e)
         return None
 
 
@@ -217,7 +277,7 @@ def _to_decimal(value) -> Decimal | None:
 
 def refresh_card_prices_in_db(card) -> bool:
     from apps.cards.models import Card
-    prices = get_card_prices(card.tcg_id)
+    prices = get_card_prices(card.tcg_id, card_name=card.name, set_name=card.set_name, tcg=card.tcg)
     if prices is None:
         return False
     Card.objects.filter(pk=card.pk).update(**prices, price_updated_at=timezone.now())
