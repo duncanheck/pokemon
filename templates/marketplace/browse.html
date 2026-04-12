@@ -6,11 +6,13 @@
 <!-- Header -->
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <div>
-    <h4 class="fw-800 mb-0"><i class="bi bi-shop me-2 text-gold"></i>Marketplace</h4>
+    <h4 style="font-weight:800;margin-bottom:.2rem">
+      <i class="bi bi-shop me-2 text-gold"></i>Marketplace
+    </h4>
     <span class="text-cv-muted small">{{ total }} active listing{{ total|pluralize }}</span>
   </div>
   {% if user.is_authenticated %}
-    <a href="{% url 'listing_create' %}" class="btn btn-gold btn-sm px-4 fw-600">
+    <a href="{% url 'listing_create' %}" class="btn btn-gold btn-sm px-4 fw-700 btn-trade">
       <i class="bi bi-plus-lg me-1"></i>List a Card
     </a>
   {% endif %}
@@ -49,10 +51,10 @@
              class="form-control form-control-sm cv-input" min="0" step="0.01">
     </div>
     <div class="col-12 col-md-2 d-flex gap-2">
-      <button type="submit" class="btn btn-gold btn-sm flex-grow-1 fw-600">Filter</button>
+      <button type="submit" class="btn btn-gold btn-sm flex-grow-1 fw-700">Filter</button>
       {% if q or tcg or ltype or min_p or max_p %}
         <a href="{% url 'marketplace_browse' %}" class="btn btn-sm"
-           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
           Clear
         </a>
       {% endif %}
@@ -72,7 +74,7 @@
             <span class="badge mb-2 align-self-start"
                   style="font-size:.65rem;
                   {% if listing.listing_type == 'trade' %}background:rgba(59,130,246,.15);color:#60a5fa
-                  {% elif listing.listing_type == 'both' %}background:rgba(124,58,237,.15);color:#a78bfa
+                  {% elif listing.listing_type == 'both' %}background:var(--cv-purple-dim);color:#a78bfa
                   {% else %}background:var(--cv-green-dim);color:var(--cv-green){% endif %}">
               {{ listing.get_listing_type_display }}
             </span>
@@ -85,7 +87,7 @@
             {% else %}
               <div class="d-flex align-items-center justify-content-center mb-2"
                    style="height:140px;background:var(--cv-surface);border-radius:8px">
-                <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.2"></i>
+                <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.15"></i>
               </div>
             {% endif %}
 
@@ -103,7 +105,7 @@
 
             <div class="mt-auto d-flex justify-content-between align-items-center">
               {% if listing.asking_price %}
-                <span class="fw-800 text-gold">${{ listing.asking_price }}</span>
+                <span class="fw-800 text-gold live-price">${{ listing.asking_price }}</span>
               {% else %}
                 <span class="text-cv-muted small">Trade only</span>
               {% endif %}
@@ -113,8 +115,8 @@
             </div>
 
             {% if listing.accepts_offers %}
-              <div class="mt-1" style="font-size:.65rem;color:var(--cv-green)">
-                <i class="bi bi-chat-dots me-1"></i>Accepts offers
+              <div class="mt-1 d-flex align-items-center gap-1" style="font-size:.65rem;color:var(--cv-green)">
+                <i class="bi bi-chat-dots"></i>Accepts offers
               </div>
             {% endif %}
           </div>
@@ -130,18 +132,18 @@
       {% if page_obj.has_previous %}
         <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.previous_page_number }}"
            class="btn btn-sm"
-           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
           <i class="bi bi-chevron-left"></i>
         </a>
       {% endif %}
       <span class="btn btn-sm disabled"
-            style="background:var(--cv-surface);border:1px solid var(--cv-border);color:#64748b">
+            style="background:var(--cv-surface);border:1px solid var(--cv-border);color:#475569">
         {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
       </span>
       {% if page_obj.has_next %}
         <a href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.next_page_number }}"
            class="btn btn-sm"
-           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
           <i class="bi bi-chevron-right"></i>
         </a>
       {% endif %}
@@ -150,7 +152,7 @@
 
 {% else %}
   <div class="cv-card p-5 text-center text-cv-muted">
-    <i class="bi bi-shop" style="font-size:3rem;opacity:.15;display:block;margin-bottom:1rem"></i>
+    <i class="bi bi-shop" style="font-size:3rem;opacity:.1;display:block;margin-bottom:1rem"></i>
     No listings found.
     {% if q or tcg or ltype %}Try changing your filters.{% endif %}
     {% if user.is_authenticated %}

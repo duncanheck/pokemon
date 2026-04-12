@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Track. Trade. Profit. — CardVault{% endblock %}
+{% block title %}Track. Value. Trade.{% endblock %}
 {% block layout_class %}{% endblock %}
 
 {% block content %}
@@ -11,26 +11,25 @@
 
       <!-- Copy -->
       <div class="col-lg-6 fade-up">
-        <div class="d-inline-flex align-items-center gap-2 mb-4 px-3 py-1 rounded-pill"
-             style="background:var(--cv-gold-dim);border:1px solid rgba(245,197,24,.2)">
-          <span class="notif-badge pulse" style="position:static;flex-shrink:0"></span>
-          <span style="font-size:.8rem;font-weight:600;color:var(--cv-gold)">Live pricing via JustTCG</span>
+        <div class="live-badge mb-4">
+          <span class="live-badge-dot"></span>
+          Live pricing via JustTCG
         </div>
 
         <h1 class="display-hero mb-4">
-          Track. Trade.<br>
-          <span class="gradient-text">Profit.</span>
+          Track. Value.<br>
+          <span class="gradient-text">Trade.</span>
         </h1>
 
         <p class="mb-5" style="font-size:1.1rem;color:#94a3b8;max-width:480px;line-height:1.65">
-          Your Pokémon, MTG, and Yu-Gi-Oh! cards as a live portfolio.
-          See real-time value, get surge alerts, and trade directly —
+          Your Pokémon, MTG &amp; Yu-Gi-Oh! cards as a live investment portfolio.
+          Real-time values, surge alerts, and peer-to-peer trading —
           <strong style="color:#fff">no middleman, no fees.</strong>
         </p>
 
         <div class="d-flex gap-3 flex-wrap align-items-center">
-          <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-bold">
-            <i class="bi bi-safe me-2"></i>Start free
+          <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-700">
+            <i class="bi bi-lightning-charge me-2"></i>Start free
           </a>
           <a href="/marketplace/" class="btn btn-outline-gold btn-lg px-4">
             Browse market <i class="bi bi-arrow-right ms-1"></i>
@@ -40,18 +39,23 @@
         <!-- Social proof -->
         <div class="d-flex align-items-center gap-4 mt-5 flex-wrap">
           <div class="text-center">
-            <div class="fw-800" style="font-size:1.4rem;color:#fff">5 TCGs</div>
-            <div style="font-size:.75rem;color:#64748b">Supported</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#fff">5 TCGs</div>
+            <div style="font-size:.72rem;color:#475569">Supported</div>
           </div>
           <div style="width:1px;height:36px;background:var(--cv-border)"></div>
           <div class="text-center">
-            <div class="fw-800" style="font-size:1.4rem;color:#fff">Live</div>
-            <div style="font-size:.75rem;color:#64748b">Pricing</div>
+            <div style="font-size:1.4rem;font-weight:800;color:var(--cv-gold)" class="live-price">Live</div>
+            <div style="font-size:.72rem;color:#475569">Pricing</div>
           </div>
           <div style="width:1px;height:36px;background:var(--cv-border)"></div>
           <div class="text-center">
-            <div class="fw-800" style="font-size:1.4rem;color:#fff">P2P</div>
-            <div style="font-size:.75rem;color:#64748b">Marketplace</div>
+            <div style="font-size:1.4rem;font-weight:800;color:#fff">P2P</div>
+            <div style="font-size:.72rem;color:#475569">Marketplace</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--cv-border)"></div>
+          <div class="text-center">
+            <div style="font-size:1.4rem;font-weight:800;color:var(--cv-purple)">$0</div>
+            <div style="font-size:.72rem;color:#475569">Platform Fees</div>
           </div>
         </div>
       </div>
@@ -62,32 +66,34 @@
           <!-- Mini KPI strip -->
           <div class="d-flex gap-2 mb-3">
             <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
-              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+              <div style="font-size:.62rem;color:#475569;text-transform:uppercase;letter-spacing:.08em">
                 Portfolio Value
               </div>
-              <div class="fw-800" style="font-size:1.3rem;color:var(--cv-gold)">$4,218.50</div>
+              <div style="font-size:1.3rem;font-weight:800;color:var(--cv-gold)">$4,218.50</div>
             </div>
             <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
-              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+              <div style="font-size:.62rem;color:#475569;text-transform:uppercase;letter-spacing:.08em">
                 30d Change
               </div>
-              <div class="fw-800 gain" style="font-size:1.3rem">+$312.40</div>
+              <div class="gain" style="font-size:1.3rem;font-weight:800">
+                <i class="bi bi-arrow-up-right" style="font-size:.9rem"></i>+$312.40
+              </div>
             </div>
             <div class="flex-grow-1 rounded-cv p-3 bg-surface-2 border border-cv">
-              <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">
+              <div style="font-size:.62rem;color:#475569;text-transform:uppercase;letter-spacing:.08em">
                 Cards
               </div>
-              <div class="fw-800" style="font-size:1.3rem;color:#fff">847</div>
+              <div style="font-size:1.3rem;font-weight:800;color:#fff">847</div>
             </div>
           </div>
 
           <!-- Card stack -->
           <div class="hero-card-stack">
             <div class="hc hc-1">
-              <i class="bi bi-lightning-charge" style="color:#7c3aed"></i>
+              <i class="bi bi-lightning-charge" style="color:var(--cv-purple)"></i>
             </div>
             <div class="hc hc-2">
-              <i class="bi bi-fire" style="color:#22c55e"></i>
+              <i class="bi bi-fire" style="color:var(--cv-green)"></i>
             </div>
             <div class="hc hc-3">
               <i class="bi bi-stars" style="color:var(--cv-gold)"></i>
@@ -96,7 +102,7 @@
 
           <!-- Alert pill -->
           <div class="mt-3 rounded-cv p-2 px-3 d-flex align-items-center gap-2"
-               style="background:rgba(0,214,143,.07);border:1px solid rgba(0,214,143,.2)">
+               style="background:rgba(0,255,157,.06);border:1px solid rgba(0,255,157,.18)">
             <i class="bi bi-graph-up-arrow" style="color:var(--cv-green)"></i>
             <span style="font-size:.8rem;color:var(--cv-green)">
               <strong>Charizard ex</strong> surged +24% in the last 7 days
@@ -114,7 +120,7 @@
             background:var(--cv-surface);padding:.9rem 0">
   <div class="container-xl px-3">
     <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
-      <span style="font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.1em">
+      <span style="font-size:.7rem;color:#334155;text-transform:uppercase;letter-spacing:.1em;font-weight:600">
         Supported games
       </span>
       {% for slug, label in tcg_choices %}
@@ -125,13 +131,13 @@
 </div>
 
 <!-- ── Features ──────────────────────────────────────────────────── -->
-<section class="container-xl px-3 py-6" style="padding-top:5rem;padding-bottom:5rem">
+<section class="container-xl px-3" style="padding-top:5rem;padding-bottom:5rem">
   <div class="text-center mb-5">
-    <h2 class="fw-800 mb-2" style="font-size:clamp(1.6rem,3vw,2.2rem)">
+    <h2 style="font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;margin-bottom:.5rem">
       Everything a serious collector needs
     </h2>
-    <p style="color:#64748b;max-width:480px;margin:0 auto">
-      Built by collectors, for collectors. No bloat, just the tools you actually use.
+    <p style="color:#475569;max-width:480px;margin:0 auto">
+      Built by collectors, for collectors. No bloat — just the tools you actually use.
     </p>
   </div>
 
@@ -139,29 +145,57 @@
     {% for icon, title, desc, color in features %}
     <div class="col-md-4 fade-up fade-up-{{ forloop.counter }}">
       <div class="feature-card">
-        <div class="feature-icon" style="background:{{ color }}1a;color:{{ color }}">
+        <div class="feature-icon" style="background:{{ color }}18;color:{{ color }}">
           <i class="bi bi-{{ icon }}"></i>
         </div>
-        <h5 class="fw-700 mb-2">{{ title }}</h5>
-        <p class="mb-0" style="color:#64748b;font-size:.9rem;line-height:1.6">{{ desc }}</p>
+        <h5 style="font-weight:700;margin-bottom:.5rem">{{ title }}</h5>
+        <p class="mb-0" style="color:#475569;font-size:.9rem;line-height:1.6">{{ desc }}</p>
       </div>
     </div>
     {% endfor %}
   </div>
 </section>
 
+<!-- ── Stats bar ──────────────────────────────────────────────────── -->
+<div style="background:var(--cv-surface);border-top:1px solid var(--cv-border);
+            border-bottom:1px solid var(--cv-border);padding:2.5rem 0">
+  <div class="container-xl px-3">
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div style="font-size:2rem;font-weight:800;color:var(--cv-gold)">5+</div>
+        <div style="font-size:.8rem;color:#475569;margin-top:.2rem">TCGs Supported</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:2rem;font-weight:800;color:#fff">Live</div>
+        <div style="font-size:.8rem;color:#475569;margin-top:.2rem">Price Updates</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:2rem;font-weight:800;color:var(--cv-purple)">P2P</div>
+        <div style="font-size:.8rem;color:#475569;margin-top:.2rem">Marketplace</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div style="font-size:2rem;font-weight:800;color:var(--cv-green)">$0</div>
+        <div style="font-size:.8rem;color:#475569;margin-top:.2rem">Platform Fees</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── CTA banner ─────────────────────────────────────────────────── -->
-<section style="background:var(--cv-surface);border-top:1px solid var(--cv-border);
-                border-bottom:1px solid var(--cv-border);padding:4rem 0">
+<section style="padding:5rem 0">
   <div class="container-xl px-3 text-center">
-    <h2 class="fw-800 mb-3" style="font-size:clamp(1.5rem,3vw,2rem)">
+    <div class="live-badge mb-4" style="display:inline-flex">
+      <span class="live-badge-dot"></span>
+      Your collection is live-priced 24/7
+    </div>
+    <h2 style="font-size:clamp(1.5rem,3vw,2.2rem);font-weight:800;margin-bottom:.75rem">
       Your collection is worth more than you think.
     </h2>
-    <p class="mb-4" style="color:#64748b">
-      Find out its real market value in under 2 minutes.
+    <p style="color:#475569;margin-bottom:2rem">
+      Find out its real market value in under 2 minutes — completely free.
     </p>
-    <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-bold">
-      <i class="bi bi-safe me-2"></i>Create your vault — it's free
+    <a href="{% url 'account_signup' %}" class="btn btn-gold btn-lg px-5 fw-700">
+      <i class="bi bi-lightning-charge me-2"></i>Create your ledger — it's free
     </a>
   </div>
 </section>
