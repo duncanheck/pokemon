@@ -7,4 +7,5 @@ urlpatterns = [
     path("profile/<str:username>/",     views.public_profile,          name="public_profile"),
     path("leaderboard/",                views.leaderboard,             name="leaderboard"),
     path("notifications/read/",         views.mark_notifications_read, name="notifications_read"),
+    path("notifications/stream/",       views.notification_stream,     name="notification_stream"),
 ]

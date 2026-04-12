@@ -61,6 +61,11 @@
             <i class="bi bi-search me-1"></i>Search
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% block nav_sets %}{% endblock %}" href="{% url 'set_browser' %}">
+            <i class="bi bi-collection me-1"></i>Sets
+          </a>
+        </li>
         {% if user.is_authenticated %}
         <li class="nav-item">
           <a class="nav-link {% block nav_trade %}{% endblock %}" href="{% url 'listing_create' %}">
@@ -264,5 +269,53 @@ document.querySelectorAll('[data-count-up]').forEach(animateCount);
 </script>
 
 {% block extra_js %}{% endblock %}
+
+{% if user.is_authenticated %}
+<script>
+// ── SSE real-time notification toasts ─────────────────────────────────────
+(function () {
+  "use strict";
+
+  function showToast(data) {
+    const wrap = document.createElement("div");
+    wrap.className = "position-fixed bottom-0 end-0 p-3";
+    wrap.style.cssText = "z-index:1090;max-width:340px";
+    const href = data.link ? `href="${data.link}"` : "";
+    wrap.innerHTML = `
+      <div class="toast show d-flex align-items-center gap-2 px-3 py-2"
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-gold);
+                  border-radius:10px;color:var(--cv-text);box-shadow:0 4px 24px rgba(0,0,0,.4)">
+        <i class="bi bi-bell-fill flex-shrink-0" style="color:var(--cv-gold)"></i>
+        <div class="small flex-grow-1">
+          <a ${href} style="color:var(--cv-text);text-decoration:none">${data.message}</a>
+        </div>
+        <button type="button" class="btn-close btn-close-white flex-shrink-0 ms-2"
+                style="font-size:.7rem"
+                onclick="this.closest('.position-fixed').remove()"></button>
+      </div>`;
+    document.body.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 7000);
+
+    // Pulse the bell badge
+    const badge = document.querySelector(".notif-badge");
+    if (badge) badge.classList.add("pulse");
+  }
+
+  function connect() {
+    const es = new EventSource("/notifications/stream/");
+    es.addEventListener("notification", function (e) {
+      try { showToast(JSON.parse(e.data)); } catch (_) {}
+    });
+    // On error or natural close (55 s timeout) — reconnect after 2 s
+    es.onerror = function () {
+      es.close();
+      setTimeout(connect, 2000);
+    };
+  }
+
+  connect();
+})();
+</script>
+{% endif %}
 </body>
 </html>

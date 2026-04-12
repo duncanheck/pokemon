@@ -1,11 +1,13 @@
+import json
+import time
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum, F, OuterRef, Subquery
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
 
 from apps.collection.models import CollectionItem
 from apps.collection.views import _portfolio_value
@@ -92,6 +94,50 @@ def dashboard(request):
 def mark_notifications_read(request):
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return JsonResponse({"ok": True})
+
+
+@login_required
+def notification_stream(request):
+    """
+    Server-Sent Events endpoint.  Polls every 3 s for new unread notifications
+    and pushes them to the browser.  Connection closes after 55 s; the client
+    automatically reconnects via the EventSource retry mechanism.
+    """
+    user_id = request.user.pk
+
+    def _generate():
+        # Seed with IDs already present so we only send *new* ones
+        seen_ids = set(
+            Notification.objects
+            .filter(user_id=user_id, is_read=False)
+            .values_list("pk", flat=True)
+        )
+        yield "event: ping\ndata: connected\n\n"
+
+        deadline = time.monotonic() + 55
+        while time.monotonic() < deadline:
+            time.sleep(3)
+            new = list(
+                Notification.objects
+                .filter(user_id=user_id, is_read=False)
+                .exclude(pk__in=seen_ids)
+                .order_by("-created_at")[:10]
+            )
+            if new:
+                for n in new:
+                    seen_ids.add(n.pk)
+                payload = json.dumps({
+                    "count":   len(new),
+                    "message": new[0].message,
+                    "type":    new[0].notif_type,
+                    "link":    new[0].link,
+                })
+                yield f"event: notification\ndata: {payload}\n\n"
+
+    response = StreamingHttpResponse(_generate(), content_type="text/event-stream")
+    response["Cache-Control"]    = "no-cache"
+    response["X-Accel-Buffering"] = "no"   # disable nginx buffering
+    return response
 
 
 # ── Public profile ────────────────────────────────────────────────────────────

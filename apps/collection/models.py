@@ -38,6 +38,17 @@ class CollectionItem(models.Model):
     for_sale = models.BooleanField(default=False, help_text="User is willing to sell/trade")
 
     notes = models.TextField(blank=True)
+
+    # Per-card alert overrides (null = use site default from settings.py)
+    alert_surge_pct = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="% rise that triggers a surge alert. Blank = site default (15%)."
+    )
+    alert_drop_pct = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="% drop that triggers a drop alert. Blank = site default (15%)."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

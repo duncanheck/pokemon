@@ -30,10 +30,13 @@ class EditCollectionItemForm(forms.ModelForm):
     class Meta:
         model = CollectionItem
         fields = ["condition", "quantity", "is_foil", "purchase_price",
-                  "purchase_date", "is_hunted", "for_sale", "notes"]
+                  "purchase_date", "is_hunted", "for_sale", "notes",
+                  "alert_surge_pct", "alert_drop_pct"]
         widgets = {
-            "purchase_date": forms.DateInput(attrs={"type": "date"}),
-            "notes": forms.Textarea(attrs={"rows": 2}),
+            "purchase_date":    forms.DateInput(attrs={"type": "date"}),
+            "notes":            forms.Textarea(attrs={"rows": 2}),
+            "alert_surge_pct":  forms.NumberInput(attrs={"placeholder": "15"}),
+            "alert_drop_pct":   forms.NumberInput(attrs={"placeholder": "15"}),
         }
 
     def __init__(self, *args, **kwargs):
