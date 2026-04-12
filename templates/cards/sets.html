@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Set Browser{% endblock %}
+{% block nav_browse %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h4 style="font-weight:800;margin-bottom:.2rem">
+      <i class="bi bi-collection me-2 text-gold"></i>Set Browser
+    </h4>
+    <span class="text-cv-muted small">
+      Browse all known sets{% if user.is_authenticated %} — completion % based on your collection{% endif %}
+    </span>
+  </div>
+  <a href="{% url 'card_search' %}" class="btn btn-sm"
+     style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+    <i class="bi bi-search me-1"></i>Search Cards
+  </a>
+</div>
+
+{% if not grouped_sets %}
+  <div class="cv-card p-5 text-center text-cv-muted">
+    <i class="bi bi-collection" style="font-size:3rem;opacity:.1;display:block;margin-bottom:1rem"></i>
+    No sets in the local database yet. Search for some cards first.
+  </div>
+{% endif %}
+
+{% for tcg_display, sets in grouped_sets %}
+  <div class="mb-5">
+    <h5 class="fw-700 mb-3" style="color:var(--cv-gold);border-bottom:1px solid var(--cv-border);padding-bottom:.5rem">
+      {{ tcg_display }}
+    </h5>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+      {% for s in sets %}
+        <div class="col">
+          <div class="cv-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="fw-700 text-white">{{ s.set_name }}</div>
+                {% if s.set_code %}
+                  <div class="text-cv-muted" style="font-size:.7rem">{{ s.set_code }}</div>
+                {% endif %}
+              </div>
+              <span class="badge" style="background:var(--cv-surface-2);color:#94a3b8;font-size:.7rem">
+                {{ s.total_cards }} card{{ s.total_cards|pluralize }}
+              </span>
+            </div>
+
+            {% if user.is_authenticated %}
+              <div class="d-flex justify-content-between align-items-center mb-1"
+                   style="font-size:.75rem">
+                <span class="text-cv-muted">Collected</span>
+                <span class="fw-700" style="color:{% if s.pct == 100 %}var(--cv-green){% elif s.pct > 50 %}var(--cv-gold){% else %}#94a3b8{% endif %}">
+                  {{ s.owned }}/{{ s.total_cards }} ({{ s.pct }}%)
+                </span>
+              </div>
+              <div class="progress" style="height:4px;background:var(--cv-surface)">
+                <div class="progress-bar"
+                     style="width:{{ s.pct }}%;background:{% if s.pct == 100 %}var(--cv-green){% else %}var(--cv-gold){% endif %};border-radius:2px"></div>
+              </div>
+            {% endif %}
+
+            <a href="{% url 'card_search' %}?q={{ s.set_name|urlencode }}&tcg={{ s.tcg }}"
+               class="btn btn-sm mt-3 w-100"
+               style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8;font-size:.75rem">
+              <i class="bi bi-search me-1"></i>Browse set
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

@@ -62,3 +62,19 @@ class Card(models.Model):
 
     def __str__(self):
         return f"{self.name} [{self.set_name}] ({self.tcg})"
+
+
+class CardPriceHistory(models.Model):
+    """Daily price snapshot per card — powers 7-day sparklines."""
+    card         = models.ForeignKey(Card, on_delete=models.CASCADE, related_name="price_history")
+    date         = models.DateField(db_index=True)
+    market_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    foil_price   = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        unique_together = ("card", "date")
+        ordering = ["date"]
+        indexes = [models.Index(fields=["card", "date"])]
+
+    def __str__(self):
+        return f"{self.card.name} {self.date} ${self.market_price}"

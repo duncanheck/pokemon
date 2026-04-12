@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Compare Cards{% endblock %}
+{% block nav_browse %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.compare-col { border-right: 1px solid var(--cv-border); }
+.compare-col:last-child { border-right: none; }
+.price-row td { padding:.4rem .75rem; font-size:.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h4 style="font-weight:800;margin-bottom:.2rem">
+      <i class="bi bi-arrow-left-right me-2 text-gold"></i>Compare Cards
+    </h4>
+    <span class="text-cv-muted small">Side-by-side price &amp; rarity comparison</span>
+  </div>
+  <a href="{% url 'card_search' %}" class="btn btn-sm"
+     style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
+    <i class="bi bi-plus me-1"></i>Add cards via Search
+  </a>
+</div>
+
+{% if not cards %}
+  <div class="cv-card p-5 text-center text-cv-muted">
+    <i class="bi bi-arrow-left-right" style="font-size:3rem;opacity:.1;display:block;margin-bottom:1rem"></i>
+    <p class="mb-2">No cards selected yet.</p>
+    <p class="small">Use the <strong style="color:var(--cv-gold)">Compare</strong> button on search results
+    to add up to 4 cards, then click <em>Compare selected</em>.</p>
+    <a href="{% url 'card_search' %}" class="btn btn-gold btn-sm fw-700 mt-2">Go to Search</a>
+  </div>
+{% else %}
+
+<!-- Side-by-side stat table -->
+<div class="cv-card mb-4" style="overflow-x:auto">
+  <table class="table table-dark mb-0" style="min-width:480px">
+    <thead>
+      <tr>
+        <th style="width:120px;color:#475569;font-size:.75rem;font-weight:600"></th>
+        {% for c in cards %}
+          <th class="text-center compare-col">
+            {% if c.card.image_url %}
+              <img src="{{ c.card.image_url }}" alt="{{ c.card.name }}"
+                   style="height:90px;object-fit:contain;border-radius:6px;margin-bottom:.5rem;display:block;margin-left:auto;margin-right:auto">
+            {% endif %}
+            <div class="fw-700 text-white" style="font-size:.85rem">{{ c.card.name }}</div>
+            <div class="text-cv-muted" style="font-size:.7rem">{{ c.card.set_name }}</div>
+          </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="price-row">
+        <td class="text-cv-muted">TCG</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">
+            <span class="badge badge-tcg-{{ c.card.tcg }}">{{ c.card.get_tcg_display }}</span>
+          </td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row">
+        <td class="text-cv-muted">Rarity</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">{{ c.card.get_rarity_display|default:"—" }}</td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row">
+        <td class="text-cv-muted">Set #</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">{{ c.card.number|default:"—" }}</td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row" style="background:rgba(245,197,24,.04)">
+        <td class="text-cv-muted fw-700">Market</td>
+        {% for c in cards %}
+          <td class="text-center compare-col fw-700 text-gold">
+            {% if c.card.market_price %}${{ c.card.market_price }}{% else %}—{% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row">
+        <td class="text-cv-muted">Low</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">
+            {% if c.card.low_price %}${{ c.card.low_price }}{% else %}—{% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row">
+        <td class="text-cv-muted">High</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">
+            {% if c.card.high_price %}${{ c.card.high_price }}{% else %}—{% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+      <tr class="price-row">
+        <td class="text-cv-muted">Foil</td>
+        {% for c in cards %}
+          <td class="text-center compare-col">
+            {% if c.card.foil_price %}${{ c.card.foil_price }}{% else %}—{% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7-day sparkline per card -->
+{% for c in cards %}
+  {% if c.history_prices %}
+    <div class="cv-card p-3 mb-3">
+      <div class="fw-700 mb-2 small" style="color:#94a3b8">
+        {{ c.card.name }} — 7-day price trend
+      </div>
+      <canvas id="chart-{{ forloop.counter }}" height="60"></canvas>
+    </div>
+  {% endif %}
+{% endfor %}
+
+<!-- Add/remove links -->
+<div class="d-flex gap-2 flex-wrap mt-3">
+  {% for c in cards %}
+    {% with current_ids=ids %}
+      <a href="{% url 'card_compare' %}?{% for id in ids %}{% if id != c.card.tcg_id %}ids={{ id }}&{% endif %}{% endfor %}"
+         class="btn btn-sm"
+         style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#f87171;font-size:.75rem">
+        <i class="bi bi-x me-1"></i>Remove {{ c.card.name }}
+      </a>
+    {% endwith %}
+  {% endfor %}
+  {% if cards|length < 4 %}
+    <a href="{% url 'card_search' %}" class="btn btn-gold btn-sm fw-700" style="font-size:.75rem">
+      <i class="bi bi-plus me-1"></i>Add card
+    </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if cards %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.color = "#64748b";
+Chart.defaults.borderColor = "rgba(255,255,255,.06)";
+
+{% for c in cards %}
+{% if c.history_prices %}
+(function() {
+  const ctx = document.getElementById("chart-{{ forloop.counter }}");
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ c.history_labels|safe }},
+      datasets: [{
+        data: {{ c.history_prices|safe }},
+        borderColor: "#f5c518",
+        backgroundColor: "rgba(245,197,24,.08)",
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: "#f5c518",
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          ticks: { callback: v => "$" + v.toFixed(2) },
+          grid: { color: "rgba(255,255,255,.04)" }
+        }
+      }
+    }
+  });
+})();
+{% endif %}
+{% endfor %}
+</script>
+{% endif %}
+{% endblock %}

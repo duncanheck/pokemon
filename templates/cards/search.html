@@ -12,6 +12,10 @@
       <span class="live-badge ms-1" style="font-size:.7rem">
         <span class="live-badge-dot"></span>live prices
       </span>
+      <a href="{% url 'set_browser' %}" class="ms-auto btn btn-sm"
+         style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8;font-size:.72rem">
+        <i class="bi bi-collection me-1"></i>Sets
+      </a>
     </div>
     <form method="get" action="{% url 'card_search' %}" class="d-flex gap-2 flex-wrap">
       <select name="tcg" class="form-select form-select-sm cv-select" style="max-width:160px">
@@ -41,14 +45,28 @@
   </div>
 {% endif %}
 
+<!-- Result count / compare bar -->
 {% if query %}
-  <p class="text-cv-muted small mb-3">
-    {% if total %}
-      <span style="color:var(--cv-gold);font-weight:600">{{ total }}</span> result{{ total|pluralize }} for <strong style="color:#fff">{{ query }}</strong>
-    {% else %}
-      No results for <strong style="color:#fff">{{ query }}</strong>
-    {% endif %}
-  </p>
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <p class="text-cv-muted small mb-0">
+      {% if results %}
+        <span style="color:var(--cv-gold);font-weight:600">{{ total }}</span>
+        result{{ total|pluralize }} for <strong style="color:#fff">{{ query }}</strong>
+      {% else %}
+        No results for <strong style="color:#fff">{{ query }}</strong>
+      {% endif %}
+    </p>
+    <!-- Compare toolbar (shown when ≥2 cards selected) -->
+    <div id="compare-bar" class="d-none d-flex align-items-center gap-2">
+      <span class="text-cv-muted small" id="compare-count-label"></span>
+      <a id="compare-link" href="#" class="btn btn-gold btn-sm fw-700" style="font-size:.75rem">
+        <i class="bi bi-arrow-left-right me-1"></i>Compare selected
+      </a>
+      <button type="button" class="btn btn-sm"
+              style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b;font-size:.72rem"
+              id="compare-clear">Clear</button>
+    </div>
+  </div>
 {% endif %}
 
 <!-- Results grid -->
@@ -56,7 +74,9 @@
   <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-3 mb-4">
     {% for card in results %}
       <div class="col">
-        <div class="tcg-card-tile p-2 h-100 d-flex flex-column align-items-center text-center">
+        <div class="tcg-card-tile p-2 h-100 d-flex flex-column align-items-center text-center"
+             data-tcg-id="{{ card.tcg_id }}">
+
           {% if card.image_url %}
             <img src="{{ card.image_url }}" alt="{{ card.name }}"
                  class="img-fluid mb-2" style="max-height:140px;object-fit:contain">
@@ -70,13 +90,38 @@
           <div class="small fw-700 text-white text-truncate w-100">{{ card.name }}</div>
           <div class="text-cv-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
 
+          <!-- Price: rendered server-side if available, otherwise lazy-loaded -->
           {% if card.market_price %}
-            <div class="fw-700 text-gold small mb-2 live-price">${{ card.market_price }}</div>
+            <div class="fw-700 text-gold small mb-1 live-price
+                        price-cell" data-tcg-id="{{ card.tcg_id }}">
+              ${{ card.market_price }}
+            </div>
+          {% else %}
+            <div class="text-cv-muted small mb-1 price-cell"
+                 data-tcg-id="{{ card.tcg_id }}"
+                 style="min-height:1.4em">
+              <span class="price-loading" style="opacity:.4;font-size:.7rem">⋯</span>
+            </div>
           {% endif %}
+
+          <!-- Tiny sparkline canvas (populated by JS) -->
+          <canvas class="sparkline-canvas mb-1"
+                  data-tcg-id="{{ card.tcg_id }}"
+                  width="80" height="28"
+                  style="display:none;opacity:.7"></canvas>
+
+          <!-- Compare toggle -->
+          <button type="button"
+                  class="btn btn-sm compare-toggle mt-auto mb-1 w-100"
+                  style="font-size:.65rem;background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b"
+                  data-tcg-id="{{ card.tcg_id }}"
+                  data-name="{{ card.name }}">
+            <i class="bi bi-plus-circle me-1"></i>Compare
+          </button>
 
           {% if user.is_authenticated %}
             <button type="button"
-                    class="btn btn-gold btn-sm mt-auto w-100 fw-700"
+                    class="btn btn-gold btn-sm w-100 fw-700"
                     data-add-card
                     data-tcg-id="{{ card.tcg_id }}"
                     data-tcg="{{ card.tcg }}"
@@ -124,5 +169,172 @@
 
 {% if user.is_authenticated %}
   {% include "partials/add_to_collection_modal.html" %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if results %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── Lazy price + sparkline loader ──────────────────────────────────────────
+(function () {
+  "use strict";
+
+  // Collect cards that need prices fetched
+  const needsPrice = [];
+  document.querySelectorAll(".price-cell[data-tcg-id]").forEach(el => {
+    if (el.querySelector(".price-loading")) {
+      needsPrice.push(el.dataset.tcgId);
+    }
+  });
+
+  // All cards get sparklines
+  const needsSparkline = Array.from(
+    document.querySelectorAll(".sparkline-canvas[data-tcg-id]")
+  ).map(el => el.dataset.tcgId);
+
+  // Fetch prices in parallel (capped at 6 concurrent)
+  const PRICE_CONCURRENCY = 6;
+  async function fetchPrices(ids) {
+    for (let i = 0; i < ids.length; i += PRICE_CONCURRENCY) {
+      const batch = ids.slice(i, i + PRICE_CONCURRENCY);
+      await Promise.all(batch.map(async tcgId => {
+        try {
+          const r = await fetch(`/cards/${tcgId}/price.json`);
+          const d = await r.json();
+          if (d.market_price) {
+            document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"]`).forEach(el => {
+              el.innerHTML = `<span class="fw-700 text-gold live-price">$${parseFloat(d.market_price).toFixed(2)}</span>`;
+            });
+            // Update price on Add button
+            const btn = document.querySelector(`[data-add-card][data-tcg-id="${tcgId}"]`);
+            if (btn) btn.dataset.price = d.market_price;
+          } else {
+            document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"] .price-loading`).forEach(
+              el => el.remove()
+            );
+          }
+        } catch (_) { /* silently skip */ }
+      }));
+    }
+  }
+
+  // Sparklines
+  const SPARKLINE_CONCURRENCY = 4;
+  async function fetchSparklines(ids) {
+    for (let i = 0; i < ids.length; i += SPARKLINE_CONCURRENCY) {
+      const batch = ids.slice(i, i + SPARKLINE_CONCURRENCY);
+      await Promise.all(batch.map(async tcgId => {
+        try {
+          const r = await fetch(`/cards/${tcgId}/sparkline.json`);
+          const d = await r.json();
+          if (!d.prices || d.prices.length < 2) return;
+
+          const canvas = document.querySelector(`.sparkline-canvas[data-tcg-id="${tcgId}"]`);
+          if (!canvas) return;
+          canvas.style.display = "block";
+
+          const prices = d.prices.filter(p => p !== null);
+          const min = Math.min(...prices);
+          const max = Math.max(...prices);
+          const color = prices[prices.length - 1] >= prices[0] ? "#00d68f" : "#f87171";
+
+          new Chart(canvas, {
+            type: "line",
+            data: {
+              labels: d.labels,
+              datasets: [{
+                data: d.prices,
+                borderColor: color,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false,
+              }]
+            },
+            options: {
+              animation: false,
+              responsive: false,
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+              scales: {
+                x: { display: false },
+                y: { display: false, min: min * 0.95, max: max * 1.05 }
+              }
+            }
+          });
+        } catch (_) { /* silently skip */ }
+      }));
+    }
+  }
+
+  // Run after first paint
+  requestAnimationFrame(() => {
+    if (needsPrice.length) fetchPrices(needsPrice);
+    if (needsSparkline.length) fetchSparklines(needsSparkline);
+  });
+})();
+
+// ── Compare selector ──────────────────────────────────────────────────────
+(function () {
+  "use strict";
+  const MAX = 4;
+  let selected = [];  // [{id, name}]
+
+  function updateBar() {
+    const bar   = document.getElementById("compare-bar");
+    const label = document.getElementById("compare-count-label");
+    const link  = document.getElementById("compare-link");
+    if (selected.length >= 2) {
+      bar.classList.remove("d-none");
+      label.textContent = `${selected.length} card${selected.length > 1 ? "s" : ""} selected`;
+      const params = selected.map(c => `ids=${encodeURIComponent(c.id)}`).join("&");
+      link.href = `/cards/compare/?${params}`;
+    } else {
+      bar.classList.add("d-none");
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".compare-toggle");
+    if (!btn) return;
+    const id   = btn.dataset.tcgId;
+    const name = btn.dataset.name;
+    const idx  = selected.findIndex(c => c.id === id);
+
+    if (idx >= 0) {
+      // Deselect
+      selected.splice(idx, 1);
+      btn.style.background = "var(--cv-surface-2)";
+      btn.style.borderColor = "var(--cv-border)";
+      btn.style.color = "#64748b";
+      btn.querySelector("i").className = "bi bi-plus-circle me-1";
+    } else if (selected.length < MAX) {
+      // Select
+      selected.push({ id, name });
+      btn.style.background = "rgba(245,197,24,.15)";
+      btn.style.borderColor = "var(--cv-gold)";
+      btn.style.color = "var(--cv-gold)";
+      btn.querySelector("i").className = "bi bi-check-circle-fill me-1";
+    } else {
+      btn.textContent = `Max ${MAX}`;
+      setTimeout(() => {
+        btn.innerHTML = `<i class="bi bi-plus-circle me-1"></i>Compare`;
+      }, 1200);
+    }
+    updateBar();
+  });
+
+  document.getElementById("compare-clear")?.addEventListener("click", () => {
+    selected = [];
+    document.querySelectorAll(".compare-toggle").forEach(b => {
+      b.style.background  = "var(--cv-surface-2)";
+      b.style.borderColor = "var(--cv-border)";
+      b.style.color       = "#64748b";
+      b.querySelector("i").className = "bi bi-plus-circle me-1";
+    });
+    updateBar();
+  });
+})();
+</script>
 {% endif %}
 {% endblock %}

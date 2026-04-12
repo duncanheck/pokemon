@@ -37,7 +37,7 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
 
     if not settings.JUSTTCG_API_KEY:
         logger.warning("No API key - falling back to local DB")
-        return _local_search(query, tcg)
+        return _local_search(query, tcg, page)
 
     params = {"q": query, "page": page, "pageSize": 24}
     if tcg:
@@ -53,9 +53,12 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
         resp.raise_for_status()
         data = resp.json()
 
+        normalised = [_normalise_card(c) for c in data.get("data", [])]
+        _enrich_from_db(normalised)  # fill missing prices/images from local cache
+
         result = {
-            "results": [_normalise_card(c) for c in data.get("data", [])],
-            "total": data.get("total", 0),
+            "results": normalised,
+            "total": data.get("total") or len(normalised),  # don't show 0 when results exist
             "error": None,
         }
         cache.set(cache_key, result, SEARCH_CACHE_TTL)
@@ -66,11 +69,39 @@ def search_cards(query: str, tcg: str = "", page: int = 1) -> dict:
             logger.error("401 from JustTCG - check API key and header")
         else:
             logger.error("JustTCG HTTP error: %s", e)
-        return {**_local_search(query, tcg), "error": "Pricing service unavailable."}
+        return {**_local_search(query, tcg, page), "error": "Pricing service unavailable."}
 
     except Exception as e:
         logger.exception("JustTCG error: %s", e)
-        return {**_local_search(query, tcg), "error": "Unexpected error."}
+        return {**_local_search(query, tcg, page), "error": "Unexpected error."}
+
+
+def get_card_by_id(tcg_id: str) -> dict | None:
+    """Fetch a single card's metadata from the API (for detail pages)."""
+    if not settings.JUSTTCG_API_KEY:
+        return None
+
+    cache_key = f"jtcg_card:{tcg_id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    try:
+        resp = requests.get(
+            f"{settings.JUSTTCG_BASE_URL}/cards/{tcg_id}",
+            headers=_headers(),
+            timeout=API_TIMEOUT,
+        )
+        resp.raise_for_status()
+        data = resp.json().get("data", {})
+        if not data:
+            return None
+        normalised = _normalise_card(data)
+        cache.set(cache_key, normalised, PRICE_CACHE_TTL)
+        return normalised
+    except Exception as e:
+        logger.warning("Card fetch failed for %s: %s", tcg_id, e)
+        return None
 
 
 def get_card_prices(tcg_id: str) -> dict | None:
@@ -104,19 +135,44 @@ def get_card_prices(tcg_id: str) -> dict | None:
         return None
 
 
-# Keep the rest of your helper functions exactly as they were
-def _local_search(query: str, tcg: str = "") -> dict:
+def _local_search(query: str, tcg: str = "", page: int = 1) -> dict:
     from apps.cards.models import Card
     qs = Card.objects.filter(name__icontains=query)
     if tcg:
         qs = qs.filter(tcg=tcg)
+    total = qs.count()
+    offset = (page - 1) * 24
     cards = list(qs.values(
         "id", "tcg_id", "tcg", "name", "set_name", "number",
         "rarity", "image_url", "market_price", "foil_price",
-    )[:48])
+    )[offset:offset + 24])
     for c in cards:
         c["_source"] = "local"
-    return {"results": cards, "total": len(cards), "error": None}
+    return {"results": cards, "total": total, "error": None}
+
+
+def _enrich_from_db(cards: list) -> None:
+    """Fill missing prices and images from the local DB cache for API results."""
+    from apps.cards.models import Card
+    ids = [c["tcg_id"] for c in cards if c.get("tcg_id")]
+    if not ids:
+        return
+    db_map = {
+        row["tcg_id"]: row
+        for row in Card.objects.filter(tcg_id__in=ids).values(
+            "tcg_id", "market_price", "foil_price", "image_url"
+        )
+    }
+    for card in cards:
+        db = db_map.get(card.get("tcg_id"))
+        if not db:
+            continue
+        if not card.get("market_price") and db.get("market_price"):
+            card["market_price"] = db["market_price"]
+        if not card.get("foil_price") and db.get("foil_price"):
+            card["foil_price"] = db["foil_price"]
+        if not card.get("image_url") and db.get("image_url"):
+            card["image_url"] = db["image_url"]
 
 
 def _normalise_card(api_card: dict) -> dict:

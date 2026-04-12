@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.accounts.models import Notification
 from .forms import CounterOfferForm, ListingForm, OfferForm
 from .models import Listing, Offer
 
@@ -30,7 +31,11 @@ def marketplace_browse(request):
     max_p    = request.GET.get("max", "")
 
     if q:
-        qs = qs.filter(collection_item__card__name__icontains=q)
+        qs = qs.filter(
+            Q(collection_item__card__name__icontains=q) |
+            Q(description__icontains=q) |
+            Q(trade_wants__icontains=q)
+        )
     if tcg:
         qs = qs.filter(collection_item__card__tcg=tcg)
     if ltype:
@@ -186,6 +191,13 @@ def make_offer(request, listing_pk):
         offer.buyer   = request.user
         offer.expires_at = timezone.now() + timezone.timedelta(days=7)
         offer.save()
+        # Notify seller
+        Notification.objects.create(
+            user=listing.seller,
+            notif_type="offer_received",
+            message=f"{request.user.username} made an offer on {listing.collection_item.card.name}",
+            link=f"/marketplace/{listing.pk}/",
+        )
         messages.success(request, "Offer submitted! The seller will respond within 7 days.")
         return redirect("listing_detail", pk=listing_pk)
 
@@ -214,11 +226,24 @@ def respond_offer(request, offer_pk):
             )
             offer.listing.status = "reserved"
             offer.listing.save(update_fields=["status", "updated_at"])
+        # Notify buyer
+        Notification.objects.create(
+            user=offer.buyer,
+            notif_type="offer_accepted",
+            message=f"Your offer on {offer.listing.collection_item.card.name} was accepted!",
+            link=f"/marketplace/{offer.listing.pk}/",
+        )
         messages.success(request, f"Offer from {offer.buyer.username} accepted. Listing is now reserved.")
 
     elif action == "decline":
         offer.status = "declined"
         offer.save(update_fields=["status", "updated_at"])
+        Notification.objects.create(
+            user=offer.buyer,
+            notif_type="offer_declined",
+            message=f"Your offer on {offer.listing.collection_item.card.name} was declined.",
+            link=f"/marketplace/{offer.listing.pk}/",
+        )
         messages.info(request, f"Offer from {offer.buyer.username} declined.")
 
     elif action == "counter":
@@ -228,6 +253,12 @@ def respond_offer(request, offer_pk):
             offer.counter_message = form.cleaned_data["counter_message"]
             offer.status = "countered"
             offer.save(update_fields=["counter_price", "counter_message", "status", "updated_at"])
+            Notification.objects.create(
+                user=offer.buyer,
+                notif_type="offer_received",
+                message=f"{request.user.username} sent a counter-offer on {offer.listing.collection_item.card.name}",
+                link=f"/marketplace/{offer.listing.pk}/",
+            )
             messages.success(request, f"Counter-offer sent to {offer.buyer.username}.")
         else:
             messages.error(request, "Counter-offer invalid — please include a message.")
@@ -260,6 +291,13 @@ def accept_counter(request, offer_pk):
         offer.listing.offers.filter(status="pending").exclude(pk=offer.pk).update(status="declined")
         offer.listing.status = "reserved"
         offer.listing.save(update_fields=["status", "updated_at"])
+    # Notify seller that buyer accepted their counter
+    Notification.objects.create(
+        user=offer.listing.seller,
+        notif_type="offer_accepted",
+        message=f"{request.user.username} accepted your counter-offer on {offer.listing.collection_item.card.name}",
+        link=f"/marketplace/{offer.listing.pk}/",
+    )
     messages.success(request, "Counter-offer accepted! The seller will complete the transaction.")
     return redirect("listing_detail", pk=offer.listing.pk)
 
