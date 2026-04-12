@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}CardVault{% endblock %} — CardVault</title>
-  <meta name="description" content="Track your TCG collection live, trade peer-to-peer, and never miss a price surge.">
+  <title>{% block title %}TCGLedger{% endblock %} — TCGLedger</title>
+  <meta name="description" content="Track. Value. Trade. — The professional TCG portfolio tracker with live pricing and a peer-to-peer marketplace.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='%230a0a0a'/><text x='16' y='22' text-anchor='middle' font-size='16' font-weight='900' font-family='system-ui' fill='%2300ff9d'>T</text></svg>">
 
   <!-- Bootstrap 5.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,7 +15,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <!-- Inter font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- CardVault styles -->
+  <!-- TCGLedger styles -->
   {% load static %}
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
@@ -25,7 +28,7 @@
   <div class="container-xl px-3">
 
     <!-- Brand -->
-    <a class="navbar-brand" href="/">Card<span class="accent">Vault</span></a>
+    <a class="navbar-brand" href="/">TCG<span class="accent">Ledger</span></a>
 
     <button class="navbar-toggler border-0" type="button"
             data-bs-toggle="collapse" data-bs-target="#mainNav"
@@ -34,18 +37,37 @@
     </button>
 
     <div class="collapse navbar-collapse" id="mainNav">
-      <!-- Left links -->
+      <!-- Nav tabs -->
       <ul class="navbar-nav me-auto gap-1 mt-2 mt-lg-0">
+        {% if user.is_authenticated %}
         <li class="nav-item">
-          <a class="nav-link {% block nav_browse %}{% endblock %}" href="/cards/">
-            <i class="bi bi-grid-3x3-gap me-1"></i>Browse
+          <a class="nav-link {% block nav_dash %}{% endblock %}" href="/dashboard/">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% block nav_portfolio %}{% endblock %}" href="/collection/">
+            <i class="bi bi-collection me-1"></i>Portfolio
+          </a>
+        </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link {% block nav_market %}{% endblock %}" href="/marketplace/">
             <i class="bi bi-shop me-1"></i>Marketplace
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link {% block nav_browse %}{% endblock %}" href="/cards/">
+            <i class="bi bi-search me-1"></i>Search
+          </a>
+        </li>
+        {% if user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link {% block nav_trade %}{% endblock %}" href="{% url 'listing_create' %}">
+            <i class="bi bi-arrow-left-right me-1"></i>Trade
+          </a>
+        </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link {% block nav_lb %}{% endblock %}" href="{% url 'leaderboard' %}">
             <i class="bi bi-trophy me-1"></i>Leaderboard
@@ -53,15 +75,9 @@
         </li>
       </ul>
 
-      <!-- Right links -->
+      <!-- Right -->
       <ul class="navbar-nav align-items-center gap-1 mt-2 mt-lg-0">
         {% if user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link {% block nav_dash %}{% endblock %}" href="/dashboard/">
-              <i class="bi bi-speedometer2 me-1"></i>Dashboard
-            </a>
-          </li>
-
           <!-- Bell -->
           <li class="nav-item">
             <a class="nav-link notif-bell" href="/dashboard/" title="Alerts">
@@ -78,14 +94,14 @@
                href="#" data-bs-toggle="dropdown" aria-expanded="false">
               {% if user.avatar %}
                 <img src="{{ user.avatar.url }}" class="rounded-circle"
-                     width="28" height="28" alt="" style="object-fit:cover">
+                     width="26" height="26" alt="" style="object-fit:cover;border:1px solid var(--cv-gold)">
               {% else %}
-                <span class="d-flex align-items-center justify-content-center rounded-circle bg-surface-2"
-                      style="width:28px;height:28px;border:1px solid var(--cv-border)">
-                  <i class="bi bi-person" style="font-size:.85rem"></i>
+                <span class="d-flex align-items-center justify-content-center rounded-circle"
+                      style="width:26px;height:26px;border:1px solid var(--cv-gold);background:var(--cv-gold-dim)">
+                  <i class="bi bi-person" style="font-size:.8rem;color:var(--cv-gold)"></i>
                 </span>
               {% endif %}
-              <span class="d-none d-lg-inline" style="font-size:.875rem;font-weight:600">
+              <span class="d-none d-lg-inline" style="font-size:.85rem;font-weight:600">
                 {{ user.username }}
               </span>
             </a>
@@ -127,7 +143,7 @@
             <a class="nav-link" href="/accounts/login/">Log in</a>
           </li>
           <li class="nav-item ms-1">
-            <a class="btn btn-gold btn-sm px-3" href="/accounts/signup/">Sign up free</a>
+            <a class="btn btn-gold btn-sm px-3 fw-700" href="/accounts/signup/">Start free</a>
           </li>
         {% endif %}
       </ul>
@@ -145,7 +161,7 @@
                   {% elif msg.tags == 'warning' %}alert-warning
                   {% else %}alert-info{% endif %}"
            role="alert"
-           style="background:var(--cv-surface-2);border-color:var(--cv-border)">
+           style="background:var(--cv-surface-2);border-color:var(--cv-border);color:var(--cv-text)">
         {{ msg }}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
@@ -163,23 +179,27 @@
   <div class="container-xl px-3">
     <div class="row g-4 pb-3">
       <div class="col-md-4">
-        <div class="footer-brand mb-2">Card<span class="accent">Vault</span></div>
-        <p class="mb-0" style="font-size:.8rem;max-width:260px">
-          Track, trade, and grow your physical TCG collection with live pricing and a peer-to-peer marketplace.
+        <div class="footer-brand mb-2">TCG<span class="accent">Ledger</span></div>
+        <p class="mb-0" style="font-size:.8rem;max-width:280px;line-height:1.6">
+          Track. Value. Trade. — The professional TCG portfolio tracker with live pricing and peer-to-peer marketplace.
         </p>
+        <div class="d-flex align-items-center gap-2 mt-3">
+          <span class="energy-dot green"></span>
+          <span style="font-size:.75rem;color:var(--cv-green)">Live pricing active</span>
+        </div>
       </div>
       <div class="col-6 col-md-2 offset-md-2">
-        <div class="fw-600 mb-2" style="color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em">
+        <div class="fw-600 mb-2" style="color:#475569;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em">
           Collect
         </div>
         <ul class="list-unstyled mb-0" style="font-size:.85rem">
-          <li class="mb-1"><a href="/cards/">Browse Cards</a></li>
-          <li class="mb-1"><a href="/collection/">My Collection</a></li>
+          <li class="mb-1"><a href="/cards/">Search Cards</a></li>
+          <li class="mb-1"><a href="/collection/">My Portfolio</a></li>
           <li class="mb-1"><a href="{% url 'leaderboard' %}">Leaderboard</a></li>
         </ul>
       </div>
       <div class="col-6 col-md-2">
-        <div class="fw-600 mb-2" style="color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em">
+        <div class="fw-600 mb-2" style="color:#475569;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em">
           Trade
         </div>
         <ul class="list-unstyled mb-0" style="font-size:.85rem">
@@ -193,7 +213,7 @@
         </ul>
       </div>
       <div class="col-6 col-md-2">
-        <div class="fw-600 mb-2" style="color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em">
+        <div class="fw-600 mb-2" style="color:#475569;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em">
           Account
         </div>
         <ul class="list-unstyled mb-0" style="font-size:.85rem">
@@ -209,14 +229,40 @@
     </div>
     <hr class="divider my-3">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2"
-         style="font-size:.78rem">
-      <span>© 2025 CardVault. Prices via JustTCG API.</span>
+         style="font-size:.75rem;color:#334155">
+      <span>© 2025 TCGLedger. Prices via JustTCG API.</span>
       <span>Built with Django 5 &amp; Bootstrap 5</span>
     </div>
   </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<script>
+// Count-up animation for KPI numbers
+function animateCount(el) {
+  const raw = el.dataset.target;
+  if (!raw) return;
+  const isDollar = raw.startsWith('$');
+  const num = parseFloat(raw.replace(/[$,]/g, ''));
+  if (isNaN(num)) return;
+  const duration = 900;
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    const val = num * ease;
+    el.textContent = isDollar
+      ? '$' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+      : Math.round(val).toLocaleString();
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+document.querySelectorAll('[data-count-up]').forEach(animateCount);
+</script>
+
 {% block extra_js %}{% endblock %}
 </body>
 </html>

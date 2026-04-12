@@ -1,38 +1,38 @@
 /* ═══════════════════════════════════════════════════════════
-   CardVault — style.css
-   Dark gaming aesthetic with physical TCG card feel
+   TCGLedger — style.css
+   Dark professional theme · Pokémon TCG energy
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Design tokens ──────────────────────────────────────── */
 :root {
-  --cv-bg:           #0d0d14;
-  --cv-surface:      #13131f;
-  --cv-surface-2:    #1a1a2e;
-  --cv-border:       #232338;
-  --cv-border-hover: #3a3a5c;
-  --cv-gold:         #f5c518;
-  --cv-gold-dim:     rgba(245, 197, 24, 0.12);
-  --cv-green:        #00d68f;
-  --cv-green-dim:    rgba(0, 214, 143, 0.10);
-  --cv-purple:       #7c3aed;
-  --cv-purple-dim:   rgba(124, 58, 237, 0.12);
+  --cv-bg:           #0a0a0a;
+  --cv-surface:      #111111;
+  --cv-surface-2:    #161616;
+  --cv-surface-3:    #1c1c1c;
+  --cv-border:       #1e1e1e;
+  --cv-border-hover: #2a2a2a;
+  --cv-gold:         #00ff9d;
+  --cv-gold-dim:     rgba(0, 255, 157, 0.10);
+  --cv-green:        #00ff9d;
+  --cv-green-dim:    rgba(0, 255, 157, 0.10);
+  --cv-purple:       #8b5cf6;
+  --cv-purple-dim:   rgba(139, 92, 246, 0.12);
   --cv-red:          #ef4444;
   --cv-blue:         #3b82f6;
   --cv-text:         #e2e8f0;
   --cv-text-muted:   #64748b;
   --cv-radius:       12px;
   --cv-radius-lg:    18px;
-  --cv-shadow:       0 4px 24px rgba(0,0,0,.45);
-  --cv-shadow-card:  0 2px 12px rgba(0,0,0,.35);
-  --cv-glow-gold:    0 0 0 1px rgba(245,197,24,.35), 0 4px 20px rgba(245,197,24,.15);
-  --cv-glow-green:   0 0 0 1px rgba(0,214,143,.35), 0 4px 20px rgba(0,214,143,.15);
-  --cv-glow-purple:  0 0 0 1px rgba(124,58,237,.4),  0 4px 20px rgba(124,58,237,.2);
+  --cv-shadow:       0 4px 24px rgba(0,0,0,.7);
+  --cv-shadow-card:  0 2px 12px rgba(0,0,0,.55);
+  --cv-glow-gold:    0 0 0 1px rgba(0,255,157,.3), 0 0 24px rgba(0,255,157,.14), 0 4px 20px rgba(0,255,157,.1);
+  --cv-glow-green:   0 0 0 1px rgba(0,255,157,.3), 0 0 24px rgba(0,255,157,.14), 0 4px 20px rgba(0,255,157,.1);
+  --cv-glow-purple:  0 0 0 1px rgba(139,92,246,.4), 0 0 24px rgba(139,92,246,.2), 0 4px 20px rgba(139,92,246,.15);
   --transition:      all .22s cubic-bezier(.4,0,.2,1);
 }
 
 /* ── Base ───────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-
 html { scroll-behavior: smooth; }
 
 body {
@@ -45,15 +45,18 @@ body {
 ::selection { background: var(--cv-gold-dim); color: var(--cv-gold); }
 
 /* ── Scrollbar ──────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--cv-surface); }
 ::-webkit-scrollbar-thumb { background: var(--cv-border-hover); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
+::-webkit-scrollbar-thumb:hover { background: #333; }
 
 /* ── Typography ─────────────────────────────────────────── */
 .text-gold   { color: var(--cv-gold)   !important; }
 .text-green  { color: var(--cv-green)  !important; }
 .text-purple { color: var(--cv-purple) !important; }
+.fw-600 { font-weight: 600 !important; }
+.fw-700 { font-weight: 700 !important; }
+.fw-800 { font-weight: 800 !important; }
 
 .display-hero {
   font-size: clamp(2.4rem, 5vw, 4rem);
@@ -64,34 +67,39 @@ body {
 
 /* ── Navbar ─────────────────────────────────────────────── */
 .cv-navbar {
-  background: rgba(13, 13, 20, 0.92) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(10, 10, 10, 0.95) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--cv-border) !important;
-  padding-top: .6rem;
-  padding-bottom: .6rem;
+  padding-top: .55rem;
+  padding-bottom: .55rem;
 }
 
 .cv-navbar .navbar-brand {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   color: #fff !important;
 }
 .cv-navbar .navbar-brand .accent { color: var(--cv-gold); }
 
 .cv-navbar .nav-link {
-  color: #94a3b8 !important;
-  font-size: .875rem;
+  color: var(--cv-text-muted) !important;
+  font-size: .85rem;
   font-weight: 500;
-  padding: .4rem .75rem;
+  padding: .4rem .7rem;
   border-radius: 8px;
   transition: var(--transition);
+  letter-spacing: .01em;
 }
 .cv-navbar .nav-link:hover,
 .cv-navbar .nav-link.active {
   color: #fff !important;
   background: var(--cv-surface-2);
+}
+.cv-navbar .nav-link.active {
+  color: var(--cv-gold) !important;
+  background: var(--cv-gold-dim);
 }
 
 .cv-navbar .dropdown-menu {
@@ -102,7 +110,7 @@ body {
   min-width: 200px;
 }
 .cv-navbar .dropdown-item {
-  color: #94a3b8;
+  color: var(--cv-text-muted);
   font-size: .875rem;
   padding: .55rem 1rem;
   border-radius: 6px;
@@ -125,21 +133,32 @@ body {
 /* ── Buttons ────────────────────────────────────────────── */
 .btn-gold {
   background: var(--cv-gold);
-  color: #0d0d14;
+  color: #0a0a0a;
   font-weight: 700;
   border: none;
   transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,.15) 60%, transparent 70%);
+  opacity: 0;
+  transition: opacity .3s;
 }
 .btn-gold:hover {
-  background: #ffd900;
-  color: #0d0d14;
-  box-shadow: 0 0 20px rgba(245,197,24,.4);
+  background: #1affaa;
+  color: #0a0a0a;
+  box-shadow: 0 0 24px rgba(0,255,157,.4);
   transform: translateY(-1px);
 }
+.btn-gold:hover::after { opacity: 1; }
 .btn-gold:active { transform: translateY(0); }
 
 .btn-outline-gold {
-  border: 1px solid rgba(245,197,24,.5);
+  border: 1px solid rgba(0,255,157,.4);
   color: var(--cv-gold);
   background: transparent;
   font-weight: 600;
@@ -149,6 +168,25 @@ body {
   background: var(--cv-gold-dim);
   border-color: var(--cv-gold);
   color: var(--cv-gold);
+  box-shadow: 0 0 12px rgba(0,255,157,.15);
+}
+
+/* Trade/buy button sparkle */
+.btn-trade {
+  position: relative;
+}
+.btn-trade::before {
+  content: '✦';
+  position: absolute;
+  top: -6px; right: -4px;
+  font-size: .65rem;
+  color: var(--cv-gold);
+  animation: sparkle-float 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sparkle-float {
+  0%, 100% { opacity: 0; transform: translateY(2px) scale(.8); }
+  40%, 60% { opacity: 1; transform: translateY(-5px) scale(1); }
 }
 
 /* ── Surface cards ──────────────────────────────────────── */
@@ -164,7 +202,6 @@ body {
   box-shadow: var(--cv-shadow);
 }
 
-/* Alias for legacy templates */
 .stat-card {
   background: var(--cv-surface);
   border: 1px solid var(--cv-border);
@@ -178,23 +215,25 @@ body {
   background: var(--cv-surface-2);
   border: 1px solid var(--cv-border);
   border-radius: 10px;
-  transition: var(--transition);
+  transition: transform .28s cubic-bezier(.4,0,.2,1), border-color .22s, box-shadow .28s;
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
 
-/* Holographic shimmer line on hover */
+/* Holographic shine sweep */
 .tcg-card-tile::before {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    135deg,
-    transparent 30%,
-    rgba(255,255,255,.03) 50%,
-    transparent 70%
+    125deg,
+    transparent 20%,
+    rgba(0,255,157,.04) 40%,
+    rgba(139,92,246,.04) 55%,
+    transparent 75%
   );
+  background-size: 200% 200%;
   opacity: 0;
   transition: opacity .3s ease;
   pointer-events: none;
@@ -202,23 +241,20 @@ body {
 }
 
 .tcg-card-tile:hover {
-  transform: translateY(-5px) scale(1.02);
+  transform: translateY(-6px) perspective(600px) rotateY(4deg) scale(1.025);
   border-color: var(--cv-gold);
   box-shadow: var(--cv-glow-gold);
   z-index: 1;
 }
 .tcg-card-tile:hover::before { opacity: 1; }
 
-.tcg-card-tile img {
-  transition: transform .25s ease;
-  border-radius: 6px;
-}
-.tcg-card-tile:hover img { transform: scale(1.04); }
+.tcg-card-tile img { transition: transform .28s ease; border-radius: 6px; }
+.tcg-card-tile:hover img { transform: scale(1.05); }
 
-/* Rarity glow variants — add class alongside tcg-card-tile */
-.tcg-card-tile.rare:hover    { border-color: #a78bfa; box-shadow: var(--cv-glow-purple); }
-.tcg-card-tile.ultra:hover   { border-color: #f97316; box-shadow: 0 0 0 1px rgba(249,115,22,.4), 0 4px 20px rgba(249,115,22,.2); }
-.tcg-card-tile.secret:hover  { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,.4), 0 4px 20px rgba(236,72,153,.25); }
+/* Rarity glows */
+.tcg-card-tile.rare:hover   { border-color: #a78bfa; box-shadow: var(--cv-glow-purple); }
+.tcg-card-tile.ultra:hover  { border-color: #f97316; box-shadow: 0 0 0 1px rgba(249,115,22,.4), 0 4px 24px rgba(249,115,22,.2); }
+.tcg-card-tile.secret:hover { border-color: #ec4899; box-shadow: 0 0 0 1px rgba(236,72,153,.4), 0 4px 24px rgba(236,72,153,.25); }
 
 /* Marketplace listing cards */
 .listing-card {
@@ -227,12 +263,24 @@ body {
   border-radius: var(--cv-radius);
   transition: var(--transition);
   overflow: hidden;
+  position: relative;
+}
+.listing-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cv-gold), var(--cv-purple));
+  transform: scaleX(0);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  transform-origin: left;
 }
 .listing-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   border-color: var(--cv-green);
   box-shadow: var(--cv-glow-green);
 }
+.listing-card:hover::after { transform: scaleX(1); }
 
 /* ── Sidebar ────────────────────────────────────────────── */
 .sidebar {
@@ -284,6 +332,15 @@ body {
   position: relative;
   overflow: hidden;
 }
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent, var(--cv-gold)), transparent);
+  opacity: 0;
+  transition: opacity .3s;
+}
 .kpi-card::after {
   content: "";
   position: absolute;
@@ -293,6 +350,7 @@ body {
   opacity: 0;
   transition: opacity .25s;
 }
+.kpi-card:hover::before,
 .kpi-card:hover::after { opacity: 1; }
 .kpi-card:hover { border-color: var(--cv-border-hover); }
 
@@ -304,7 +362,7 @@ body {
   margin-bottom: .25rem;
 }
 .kpi-card .kpi-label {
-  font-size: .75rem;
+  font-size: .72rem;
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -315,7 +373,15 @@ body {
   right: 1rem; top: 50%;
   transform: translateY(-50%);
   font-size: 2.2rem;
-  opacity: .07;
+  opacity: .06;
+}
+.kpi-card .kpi-growth {
+  font-size: .75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+  margin-top: .3rem;
 }
 
 /* ── Tables ─────────────────────────────────────────────── */
@@ -329,7 +395,7 @@ body {
 }
 .cv-table thead th {
   color: var(--cv-text-muted);
-  font-size: .7rem;
+  font-size: .68rem;
   font-weight: 700;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -341,7 +407,7 @@ body {
 
 /* ── Badges ─────────────────────────────────────────────── */
 .badge-tcg-pokemon  { background: #e8534a !important; color: #fff; }
-.badge-tcg-mtg      { background: #7c3aed !important; color: #fff; }
+.badge-tcg-mtg      { background: #8b5cf6 !important; color: #fff; }
 .badge-tcg-yugioh   { background: #d97706 !important; color: #fff; }
 .badge-tcg-onepiece { background: #dc2626 !important; color: #fff; }
 .badge-tcg-lorcana  { background: #2563eb !important; color: #fff; }
@@ -362,8 +428,8 @@ body {
   transition: var(--transition);
 }
 .cv-input:focus, .cv-select:focus, .cv-textarea:focus {
-  border-color: rgba(245,197,24,.5) !important;
-  box-shadow: 0 0 0 3px rgba(245,197,24,.08) !important;
+  border-color: rgba(0,255,157,.4) !important;
+  box-shadow: 0 0 0 3px rgba(0,255,157,.07) !important;
   outline: none;
 }
 .cv-input::placeholder { color: var(--cv-text-muted) !important; }
@@ -395,8 +461,39 @@ body {
   border-radius: 8px;
   transition: background .15s;
 }
-.notif-item.unread { background: rgba(245,197,24,.05); }
+.notif-item.unread { background: rgba(0,255,157,.04); border-left: 2px solid var(--cv-gold); }
 .notif-item:hover  { background: var(--cv-surface-2); }
+
+/* ── Live price pulse ───────────────────────────────────── */
+@keyframes price-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(0,255,157,.35); }
+  70%  { box-shadow: 0 0 0 8px rgba(0,255,157,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,255,157,0); }
+}
+.live-price {
+  display: inline-block;
+  border-radius: 6px;
+  animation: price-pulse-ring 2.5s ease-out infinite;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--cv-gold-dim);
+  border: 1px solid rgba(0,255,157,.2);
+  color: var(--cv-gold);
+  font-size: .75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: .2rem .75rem;
+}
+.live-badge-dot {
+  width: 6px; height: 6px;
+  background: var(--cv-gold);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
 
 /* ── Hero section (landing) ─────────────────────────────── */
 .hero-section {
@@ -407,33 +504,31 @@ body {
 .hero-section::before {
   content: "";
   position: absolute;
-  top: -200px; left: 50%;
+  top: -150px; left: 50%;
   transform: translateX(-50%);
-  width: 800px; height: 600px;
-  background: radial-gradient(ellipse at center, rgba(124,58,237,.12) 0%, transparent 70%);
+  width: 900px; height: 700px;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,.1) 0%, transparent 65%);
   pointer-events: none;
 }
 .hero-section::after {
   content: "";
   position: absolute;
-  top: -100px; right: -100px;
+  top: -80px; right: -80px;
   width: 500px; height: 500px;
-  background: radial-gradient(ellipse at center, rgba(245,197,24,.06) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(0,255,157,.06) 0%, transparent 65%);
   pointer-events: none;
 }
 
-.hero-tagline { color: var(--cv-gold); }
-
 /* Animated gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, var(--cv-gold) 0%, #ff9500 50%, var(--cv-gold) 100%);
-  background-size: 200% auto;
+  background: linear-gradient(135deg, var(--cv-gold) 0%, #00e5ff 40%, var(--cv-purple) 70%, var(--cv-gold) 100%);
+  background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 3s linear infinite;
+  animation: shimmer 4s linear infinite;
 }
-@keyframes shimmer { to { background-position: 200% center; } }
+@keyframes shimmer { to { background-position: 300% center; } }
 
 /* Feature cards on landing */
 .feature-card {
@@ -455,7 +550,11 @@ body {
   transition: opacity .3s;
   border-radius: inherit;
 }
-.feature-card:hover { border-color: rgba(245,197,24,.3); transform: translateY(-3px); box-shadow: var(--cv-shadow); }
+.feature-card:hover {
+  border-color: rgba(0,255,157,.25);
+  transform: translateY(-3px);
+  box-shadow: var(--cv-shadow);
+}
 .feature-card:hover::before { opacity: 1; }
 .feature-card .feature-icon {
   width: 52px; height: 52px;
@@ -473,8 +572,9 @@ body {
   border: 1px solid var(--cv-border);
   border-radius: var(--cv-radius-lg);
   padding: 1.5rem;
-  box-shadow: var(--cv-shadow), 0 0 80px rgba(124,58,237,.12);
+  box-shadow: var(--cv-shadow), 0 0 80px rgba(139,92,246,.1);
 }
+
 .hero-card-stack {
   position: relative;
   height: 280px;
@@ -489,24 +589,37 @@ body {
   display: flex; align-items: center; justify-content: center;
 }
 .hero-card-stack .hc-1 {
-  transform: rotate(-8deg) translate(-30px, 10px);
-  background: linear-gradient(135deg, #1e1e3f, #0d0d2e);
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  background: linear-gradient(135deg, #130d25, #0d0720);
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
   z-index: 1;
+  animation: float-card-1 4s ease-in-out infinite;
 }
 .hero-card-stack .hc-2 {
-  transform: rotate(4deg) translate(20px, -5px);
-  background: linear-gradient(135deg, #1e2e1e, #0d1a0d);
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  background: linear-gradient(135deg, #0a1a0d, #060e08);
+  box-shadow: 0 8px 32px rgba(0,0,0,.6);
   z-index: 2;
+  animation: float-card-2 4s ease-in-out infinite;
 }
 .hero-card-stack .hc-3 {
-  transform: rotate(-1deg);
-  background: linear-gradient(135deg, #2e1e1e, #1a0d0d);
-  box-shadow: var(--cv-glow-gold);
+  background: linear-gradient(135deg, #1a0a0a, #0e0606);
+  box-shadow: var(--cv-glow-green);
   z-index: 3;
+  animation: float-card-3 4s ease-in-out infinite;
 }
 .hero-card-stack .hc i { font-size: 3rem; opacity: .3; }
+
+@keyframes float-card-1 {
+  0%, 100% { transform: rotate(-8deg) translate(-30px, 10px); }
+  50%       { transform: rotate(-10deg) translate(-30px, 4px); }
+}
+@keyframes float-card-2 {
+  0%, 100% { transform: rotate(4deg) translate(20px, -5px); }
+  50%       { transform: rotate(5deg) translate(20px, -11px); }
+}
+@keyframes float-card-3 {
+  0%, 100% { transform: rotate(-1deg); }
+  50%       { transform: rotate(-2deg) translateY(-6px); }
+}
 
 /* ── Portfolio chart area ────────────────────────────────── */
 .chart-container {
@@ -514,6 +627,37 @@ body {
   border: 1px solid var(--cv-border);
   border-radius: var(--cv-radius);
   padding: 1.25rem;
+}
+
+/* ── Pokéball spinner ────────────────────────────────────── */
+@keyframes pokeball-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.pokeball-spinner {
+  display: inline-block;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: conic-gradient(#111111 0deg 180deg, var(--cv-gold) 180deg 360deg);
+  animation: pokeball-spin 0.85s ease-in-out infinite;
+  position: relative;
+  flex-shrink: 0;
+}
+.pokeball-spinner::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 3px;
+  background: var(--cv-gold);
+  transform: translateY(-50%);
+}
+.pokeball-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 30%;
+  background: #0a0a0a;
+  border-radius: 50%;
+  border: 2px solid var(--cv-gold);
 }
 
 /* ── Footer ─────────────────────────────────────────────── */
@@ -530,7 +674,7 @@ body {
 .cv-footer .footer-brand { font-weight: 800; font-size: 1.1rem; color: #fff; }
 .cv-footer .footer-brand .accent { color: var(--cv-gold); }
 
-/* ── Responsive tweaks ──────────────────────────────────── */
+/* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .kpi-card .kpi-value { font-size: 1.5rem; }
@@ -539,38 +683,71 @@ body {
   .hero-card-stack .hc { width: 100px; height: 140px; }
 }
 
-/* ── Utility ────────────────────────────────────────────── */
+/* ── Utilities ───────────────────────────────────────────── */
 .gain  { color: var(--cv-green) !important; }
 .loss  { color: var(--cv-red)   !important; }
 .divider { border-color: var(--cv-border) !important; }
 .rounded-cv { border-radius: var(--cv-radius) !important; }
-.bg-surface  { background: var(--cv-surface)   !important; }
+.bg-surface   { background: var(--cv-surface)   !important; }
 .bg-surface-2 { background: var(--cv-surface-2) !important; }
-.border-cv   { border-color: var(--cv-border)   !important; }
+.border-cv    { border-color: var(--cv-border)   !important; }
 .text-cv-muted { color: var(--cv-text-muted) !important; }
 
 /* Foil shimmer badge */
 .badge-foil {
-  background: linear-gradient(135deg, #ffd700, #ff69b4, #00bfff, #ffd700);
+  background: linear-gradient(135deg, #00ff9d, #8b5cf6, #00e5ff, #00ff9d);
   background-size: 200% auto;
-  color: #000;
-  animation: shimmer 2s linear infinite;
+  color: #0a0a0a;
+  animation: shimmer 2.5s linear infinite;
   font-weight: 700;
 }
 
 /* Pulse for unread notifications */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: .6; transform: scale(1.4); }
+  50%       { opacity: .6; transform: scale(1.5); }
 }
 .pulse { animation: pulse-dot 1.8s ease-in-out infinite; }
 
 /* Page fade-in */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fadeUp .4s ease both; }
-.fade-up-1 { animation-delay: .08s; }
-.fade-up-2 { animation-delay: .16s; }
-.fade-up-3 { animation-delay: .24s; }
+.fade-up   { animation: fadeUp .4s ease both; }
+.fade-up-1 { animation-delay: .07s; }
+.fade-up-2 { animation-delay: .14s; }
+.fade-up-3 { animation-delay: .21s; }
+
+/* Growth indicator arrows */
+.growth-up   { color: var(--cv-green); }
+.growth-down { color: var(--cv-red); }
+
+/* Energy symbol accents */
+.energy-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.energy-dot.green  { background: var(--cv-green); box-shadow: 0 0 6px var(--cv-green); }
+.energy-dot.purple { background: var(--cv-purple); box-shadow: 0 0 6px var(--cv-purple); }
+
+/* Confetti canvas (JS injected) */
+#tcg-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+
+/* Modal TCGLedger style */
+.tcg-modal .modal-content {
+  background: var(--cv-surface);
+  border: 1px solid var(--cv-border);
+  border-radius: var(--cv-radius-lg);
+  box-shadow: var(--cv-shadow), 0 0 60px rgba(0,255,157,.06);
+}
+.tcg-modal .modal-header {
+  border-color: var(--cv-border);
+  padding: 1.25rem 1.5rem;
+}
+.tcg-modal .modal-footer {
+  border-color: var(--cv-border);
+  padding: 1rem 1.5rem;
+}

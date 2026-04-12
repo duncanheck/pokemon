@@ -1,47 +1,48 @@
 {% extends "base.html" %}
 {% block title %}{{ action }} Listing{% endblock %}
+{% block nav_trade %}active{% endblock %}
 {% block layout_class %}container py-4{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-7">
-    <div class="stat-card p-4">
-      <h4 class="fw-bold mb-4">
-        <i class="bi bi-tag me-2 text-warning"></i>{{ action }} Listing
+    <div class="cv-card p-4">
+      <h4 class="fw-700 mb-4">
+        <i class="bi bi-arrow-left-right me-2 text-gold"></i>{{ action }} Listing
       </h4>
 
       <form method="post">
         {% csrf_token %}
 
         <div class="mb-3">
-          <label class="form-label small fw-semibold">Card from your collection *</label>
+          <label class="form-label small fw-600">Card from your collection *</label>
           {{ form.collection_item }}
           {% for err in form.collection_item.errors %}
-            <div class="text-danger small">{{ err }}</div>
+            <div style="color:var(--cv-red);font-size:.75rem">{{ err }}</div>
           {% endfor %}
-          <div class="form-text text-muted small">
+          <div class="text-cv-muted small mt-1">
             Only cards in your Have list (not want list) can be listed.
           </div>
         </div>
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Listing type *</label>
+            <label class="form-label small fw-600">Listing type *</label>
             {{ form.listing_type }}
             {% for err in form.listing_type.errors %}
-              <div class="text-danger small">{{ err }}</div>
+              <div style="color:var(--cv-red);font-size:.75rem">{{ err }}</div>
             {% endfor %}
           </div>
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Asking price ($)</label>
+            <label class="form-label small fw-600">Asking price ($)</label>
             {{ form.asking_price }}
             {% for err in form.asking_price.errors %}
-              <div class="text-danger small">{{ err }}</div>
+              <div style="color:var(--cv-red);font-size:.75rem">{{ err }}</div>
             {% endfor %}
-            <div class="form-text text-muted small">Required for Sale / Sale or Trade.</div>
+            <div class="text-cv-muted small mt-1">Required for Sale / Sale or Trade.</div>
           </div>
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">Quantity available *</label>
+            <label class="form-label small fw-600">Quantity available *</label>
             {{ form.quantity_available }}
           </div>
           <div class="col-md-6 d-flex align-items-center gap-2 mt-4">
@@ -53,27 +54,32 @@
             </div>
           </div>
           <div class="col-12">
-            <label class="form-label small fw-semibold">Description</label>
+            <label class="form-label small fw-600">Description</label>
             {{ form.description }}
           </div>
           <div class="col-12">
-            <label class="form-label small fw-semibold">Trade wants</label>
+            <label class="form-label small fw-600">Trade wants</label>
             {{ form.trade_wants }}
-            <div class="form-text text-muted small">
+            <div class="text-cv-muted small mt-1">
               Describe what you'd accept in trade (leave blank if sale only).
             </div>
           </div>
         </div>
 
         {% if form.non_field_errors %}
-          <div class="alert alert-danger mt-3 py-2 small">{{ form.non_field_errors }}</div>
+          <div class="mt-3 py-2 px-3 rounded-cv" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--cv-red);font-size:.85rem">
+            {{ form.non_field_errors }}
+          </div>
         {% endif %}
 
         <div class="d-flex gap-2 mt-4">
-          <button type="submit" class="btn btn-warning fw-semibold px-4">
+          <button type="submit" class="btn btn-gold fw-700 px-4 btn-trade">
             {{ action }} Listing
           </button>
-          <a href="{% url 'my_listings' %}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{% url 'my_listings' %}" class="btn"
+             style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
+            Cancel
+          </a>
         </div>
       </form>
     </div>

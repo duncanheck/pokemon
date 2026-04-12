@@ -15,16 +15,16 @@
           <i class="bi bi-speedometer2"></i>Dashboard
         </a></li>
         <li><a class="nav-link" href="{% url 'collection_list' %}">
-          <i class="bi bi-collection"></i>My Collection
-          {% if stats.total_cards %}<span class="badge ms-auto" style="background:var(--cv-border);color:#94a3b8;font-size:.65rem">{{ stats.total_cards }}</span>{% endif %}
+          <i class="bi bi-collection"></i>Portfolio
+          {% if stats.total_cards %}<span class="badge ms-auto" style="background:var(--cv-border);color:#64748b;font-size:.62rem">{{ stats.total_cards }}</span>{% endif %}
         </a></li>
         <li><a class="nav-link" href="{% url 'collection_list' %}?tab=want">
           <i class="bi bi-heart"></i>Want List
-          {% if want_count %}<span class="badge ms-auto" style="background:rgba(239,68,68,.15);color:#ef4444;font-size:.65rem">{{ want_count }}</span>{% endif %}
+          {% if want_count %}<span class="badge ms-auto" style="background:rgba(239,68,68,.15);color:#ef4444;font-size:.62rem">{{ want_count }}</span>{% endif %}
         </a></li>
         <li><a class="nav-link" href="{% url 'collection_list' %}?tab=for_sale">
           <i class="bi bi-tag"></i>For Sale
-          {% if for_sale_count %}<span class="badge ms-auto" style="background:var(--cv-green-dim);color:var(--cv-green);font-size:.65rem">{{ for_sale_count }}</span>{% endif %}
+          {% if for_sale_count %}<span class="badge ms-auto" style="background:var(--cv-green-dim);color:var(--cv-green);font-size:.62rem">{{ for_sale_count }}</span>{% endif %}
         </a></li>
       </ul>
       <div class="sidebar-section">Market</div>
@@ -60,12 +60,15 @@
     <!-- Greeting -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
       <div class="fade-up">
-        <h4 class="fw-800 mb-0" style="font-size:1.35rem">
-          Hey, {{ user.username }} 👋
+        <h4 style="font-weight:800;font-size:1.35rem;margin-bottom:.15rem">
+          Hey, {{ user.username }} <span style="font-size:1.1rem">⚡</span>
         </h4>
-        <span class="text-cv-muted small">{{ user.get_preferred_tcg_display }} collector</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="live-badge-dot energy-dot green"></span>
+          <span class="text-cv-muted small">{{ user.get_preferred_tcg_display }} collector · portfolio live</span>
+        </div>
       </div>
-      <a href="{% url 'card_search' %}" class="btn btn-gold btn-sm px-4 fw-600 fade-up fade-up-1">
+      <a href="{% url 'card_search' %}" class="btn btn-gold btn-sm px-4 fw-700 fade-up fade-up-1">
         <i class="bi bi-plus-lg me-1"></i>Add Cards
       </a>
     </div>
@@ -75,28 +78,35 @@
       <div class="col-6 col-md-3 fade-up fade-up-1">
         <div class="kpi-card" style="--accent:var(--cv-gold)">
           <i class="bi bi-safe kpi-icon"></i>
-          <div class="kpi-value text-gold">${{ portfolio_value|floatformat:2 }}</div>
+          <div class="kpi-value text-gold"
+               data-count-up data-target="${{ portfolio_value|floatformat:2 }}">${{ portfolio_value|floatformat:2 }}</div>
           <div class="kpi-label">Portfolio Value</div>
+          <div class="kpi-growth gain">
+            <i class="bi bi-arrow-up-right"></i>Live pricing
+          </div>
         </div>
       </div>
       <div class="col-6 col-md-3 fade-up fade-up-2">
-        <div class="kpi-card" style="--accent:#3b82f6">
+        <div class="kpi-card" style="--accent:var(--cv-blue)">
           <i class="bi bi-layers kpi-icon"></i>
-          <div class="kpi-value">{{ stats.total_cards|default:"0" }}</div>
+          <div class="kpi-value" style="color:var(--cv-blue)"
+               data-count-up data-target="{{ stats.total_cards|default:'0' }}">{{ stats.total_cards|default:"0" }}</div>
           <div class="kpi-label">Total Cards</div>
         </div>
       </div>
       <div class="col-6 col-md-3 fade-up fade-up-2">
         <div class="kpi-card" style="--accent:var(--cv-purple)">
           <i class="bi bi-grid kpi-icon"></i>
-          <div class="kpi-value">{{ stats.unique_cards|default:"0" }}</div>
+          <div class="kpi-value" style="color:var(--cv-purple)"
+               data-count-up data-target="{{ stats.unique_cards|default:'0' }}">{{ stats.unique_cards|default:"0" }}</div>
           <div class="kpi-label">Unique Cards</div>
         </div>
       </div>
       <div class="col-6 col-md-3 fade-up fade-up-3">
         <div class="kpi-card" style="--accent:var(--cv-red)">
           <i class="bi bi-heart kpi-icon"></i>
-          <div class="kpi-value" style="color:var(--cv-red)">{{ want_count }}</div>
+          <div class="kpi-value" style="color:var(--cv-red)"
+               data-count-up data-target="{{ want_count }}">{{ want_count }}</div>
           <div class="kpi-label">Want List</div>
         </div>
       </div>
@@ -116,7 +126,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                   <span class="badge badge-tcg-{{ entry.card__tcg }} px-2 py-1"
                         style="font-size:.72rem">{{ entry.card__tcg|title }}</span>
-                  <span class="fw-700" style="font-size:.9rem">{{ entry.count }}</span>
+                  <span style="font-weight:700;font-size:.9rem">{{ entry.count }}</span>
                 </div>
               {% endfor %}
             </div>
@@ -149,10 +159,11 @@
                       <td class="fw-600 small">{{ item.card.name }}</td>
                       <td class="text-cv-muted small">{{ item.card.set_name|truncatechars:16 }}</td>
                       <td><span class="badge badge-cond-{{ item.condition }}">{{ item.condition }}</span></td>
-                      <td class="text-end small text-gold fw-600">${{ item.card.market_price|floatformat:2 }}</td>
+                      <td class="text-end small text-gold fw-700">${{ item.card.market_price|floatformat:2 }}</td>
                       <td class="text-end small">
                         {% if item.gain_loss is not None %}
-                          <span class="fw-600 {% if item.gain_loss >= 0 %}gain{% else %}loss{% endif %}">
+                          <span class="fw-700 {% if item.gain_loss >= 0 %}gain{% else %}loss{% endif %} d-flex align-items-center justify-content-end gap-1">
+                            <i class="bi bi-arrow-{% if item.gain_loss >= 0 %}up{% else %}down{% endif %}-right" style="font-size:.75rem"></i>
                             {% if item.gain_loss >= 0 %}+{% endif %}${{ item.gain_loss|floatformat:2 }}
                           </span>
                         {% else %}
@@ -165,7 +176,7 @@
               </table>
             </div>
           {% else %}
-            <p class="text-cv-muted small mb-0">Add cards with purchase prices to track P&L.</p>
+            <p class="text-cv-muted small mb-0">Add cards with purchase prices to track P&amp;L.</p>
           {% endif %}
         </div>
       </div>
@@ -187,10 +198,10 @@
                     {% else %}
                       <div class="d-flex align-items-center justify-content-center mb-2"
                            style="height:120px;background:var(--cv-surface)">
-                        <i class="bi bi-card-image" style="font-size:2rem;opacity:.3"></i>
+                        <i class="bi bi-card-image" style="font-size:2rem;opacity:.2"></i>
                       </div>
                     {% endif %}
-                    <div class="small fw-600 text-truncate" style="font-size:.78rem">
+                    <div class="small fw-700 text-truncate" style="font-size:.78rem">
                       {{ item.card.name }}
                     </div>
                     <div class="text-cv-muted" style="font-size:.65rem">
@@ -210,7 +221,7 @@
             </div>
           {% else %}
             <p class="text-cv-muted small mb-0">
-              Your vault is empty.
+              Your ledger is empty.
               <a href="{% url 'card_search' %}" style="color:var(--cv-gold)">Start adding cards →</a>
             </p>
           {% endif %}
@@ -264,9 +275,12 @@
           <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <h6 class="fw-700 mb-0 d-flex align-items-center gap-2">
               <i class="bi bi-graph-up-arrow text-gold"></i>Portfolio Value Trend
+              <span class="live-badge" style="font-size:.65rem;padding:.15rem .5rem">
+                <span class="live-badge-dot"></span>live
+              </span>
             </h6>
             <a href="{% url 'collection_list' %}" class="btn btn-outline-gold btn-sm">
-              <i class="bi bi-collection me-1"></i>Manage Collection
+              <i class="bi bi-collection me-1"></i>Manage Portfolio
             </a>
           </div>
           <canvas id="portfolioChart" height="75"></canvas>
@@ -299,17 +313,19 @@ document.getElementById("markReadBtn")?.addEventListener("click", function() {
       datasets: [{
         label: "Portfolio ($)",
         data,
-        borderColor: "#f5c518",
+        borderColor: "#00ff9d",
         backgroundColor: ctx => {
           const g = ctx.chart.ctx.createLinearGradient(0,0,0,220);
-          g.addColorStop(0, "rgba(245,197,24,.18)");
-          g.addColorStop(1, "rgba(245,197,24,0)");
+          g.addColorStop(0, "rgba(0,255,157,.18)");
+          g.addColorStop(1, "rgba(0,255,157,0)");
           return g;
         },
         borderWidth: 2,
         pointRadius: 0,
-        pointHoverRadius: 4,
-        pointHoverBackgroundColor: "#f5c518",
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: "#00ff9d",
+        pointHoverBorderColor: "#0a0a0a",
+        pointHoverBorderWidth: 2,
         tension: 0.4,
         fill: true,
       }]
@@ -320,28 +336,43 @@ document.getElementById("markReadBtn")?.addEventListener("click", function() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#1a1a2e",
-          borderColor: "#232338",
+          backgroundColor: "#161616",
+          borderColor: "#1e1e1e",
           borderWidth: 1,
-          titleColor: "#94a3b8",
-          bodyColor: "#f5c518",
+          titleColor: "#64748b",
+          bodyColor: "#00ff9d",
           bodyFont: { weight: "700" },
           callbacks: { label: ctx => " $" + ctx.parsed.y.toLocaleString("en-US", {minimumFractionDigits:2}) },
         },
       },
       scales: {
         x: {
-          grid: { color: "rgba(35,35,56,.8)" },
-          ticks: { color: "#64748b", maxTicksLimit: 7, font: { size: 11 } },
+          grid: { color: "rgba(30,30,30,.8)" },
+          ticks: { color: "#334155", maxTicksLimit: 7, font: { size: 11 } },
         },
         y: {
-          grid: { color: "rgba(35,35,56,.8)" },
-          ticks: { color: "#64748b", font: { size: 11 },
+          grid: { color: "rgba(30,30,30,.8)" },
+          ticks: { color: "#334155", font: { size: 11 },
                    callback: v => "$" + v.toLocaleString() },
         },
       },
     }
   });
+})();
+
+// Confetti on portfolio milestone
+(function() {
+  const val = parseFloat("{{ portfolio_value|floatformat:2 }}".replace(/,/g, ''));
+  if (!val || val <= 0) return;
+  const milestones = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
+  const key = 'tcgl_milestone_' + window.location.pathname;
+  const prev = parseFloat(sessionStorage.getItem(key) || '0');
+  const hit = milestones.find(m => val >= m && prev < m);
+  if (hit && typeof confetti === 'function') {
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.55 },
+               colors: ['#00ff9d', '#8b5cf6', '#00e5ff', '#fff'] });
+  }
+  sessionStorage.setItem(key, val);
 })();
 </script>
 {% endblock %}

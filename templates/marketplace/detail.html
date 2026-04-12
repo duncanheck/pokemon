@@ -11,57 +11,62 @@
       <img src="{{ card.image_url_hi|default:card.image_url }}" alt="{{ card.name }}"
            class="img-fluid rounded-3 shadow" style="max-height:360px">
     {% else %}
-      <div class="stat-card rounded-3 d-flex align-items-center justify-content-center"
-           style="height:280px"><i class="bi bi-card-image fs-1 text-muted"></i></div>
+      <div class="cv-card rounded-3 d-flex align-items-center justify-content-center"
+           style="height:280px"><i class="bi bi-card-image fs-1 text-cv-muted"></i></div>
     {% endif %}
   </div>
 
   <!-- Center: listing info -->
   <div class="col-md-5">
-    <div class="d-flex align-items-center gap-2 mb-1">
+    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
       <span class="badge badge-tcg-{{ card.tcg }}">{{ card.get_tcg_display }}</span>
-      <span class="badge bg-secondary">{{ item.condition }}</span>
-      {% if item.is_foil %}<span class="badge bg-warning text-dark">Foil</span>{% endif %}
-      <span class="badge {% if listing.status == 'active' %}bg-success
-                         {% elif listing.status == 'reserved' %}bg-warning text-dark
-                         {% else %}bg-secondary{% endif %}">
+      <span class="badge badge-cond-{{ item.condition }}">{{ item.condition }}</span>
+      {% if item.is_foil %}<span class="badge badge-foil">Foil</span>{% endif %}
+      <span class="badge
+        {% if listing.status == 'active' %}
+          " style="background:var(--cv-green-dim);color:var(--cv-green)
+        {% elif listing.status == 'reserved' %}
+          " style="background:rgba(251,191,36,.15);color:#fbbf24
+        {% else %}
+          " style="background:var(--cv-surface-2);color:var(--cv-text-muted)
+        {% endif %}">
         {{ listing.get_status_display }}
       </span>
     </div>
 
-    <h2 class="fw-bold mb-0">{{ card.name }}</h2>
-    <p class="text-muted">{{ card.set_name }}</p>
+    <h2 class="fw-700 mb-0" style="font-size:1.75rem">{{ card.name }}</h2>
+    <p class="text-cv-muted">{{ card.set_name }}</p>
 
     <div class="mb-3">
       {% if listing.asking_price %}
-        <div class="fs-3 fw-bold text-warning">${{ listing.asking_price }}</div>
+        <div class="fw-800 text-gold live-price" style="font-size:2rem">${{ listing.asking_price }}</div>
       {% endif %}
-      <div class="text-muted small">
-        <span class="me-3"><i class="bi bi-box me-1"></i>Qty: {{ listing.quantity_available }}</span>
-        <span class="me-3"><i class="bi bi-tag me-1"></i>{{ listing.get_listing_type_display }}</span>
+      <div class="text-cv-muted small d-flex gap-3 mt-1 flex-wrap">
+        <span><i class="bi bi-box me-1"></i>Qty: {{ listing.quantity_available }}</span>
+        <span><i class="bi bi-tag me-1"></i>{{ listing.get_listing_type_display }}</span>
         <span><i class="bi bi-eye me-1"></i>{{ listing.views_count }} view{{ listing.views_count|pluralize }}</span>
       </div>
     </div>
 
     {% if listing.description %}
-      <div class="stat-card p-3 mb-3 rounded-3">
-        <h6 class="fw-semibold small mb-1 text-muted">Description</h6>
+      <div class="cv-card p-3 mb-3">
+        <h6 class="fw-600 small mb-1 text-cv-muted">Description</h6>
         <p class="mb-0 small">{{ listing.description|linebreaksbr }}</p>
       </div>
     {% endif %}
 
     {% if listing.trade_wants %}
-      <div class="stat-card p-3 mb-3 rounded-3">
-        <h6 class="fw-semibold small mb-1 text-warning">
+      <div class="cv-card p-3 mb-3">
+        <h6 class="fw-600 small mb-1 text-gold">
           <i class="bi bi-arrow-left-right me-1"></i>Seller wants in trade
         </h6>
         <p class="mb-0 small">{{ listing.trade_wants|linebreaksbr }}</p>
       </div>
     {% endif %}
 
-    <div class="text-muted small">
+    <div class="text-cv-muted small">
       Listed by
-      <a href="{% url 'public_profile' listing.seller.username %}" class="text-warning">
+      <a href="{% url 'public_profile' listing.seller.username %}" class="text-gold">
         {{ listing.seller.username }}
       </a>
       · {{ listing.created_at|date:"M j, Y" }}
@@ -71,20 +76,22 @@
     {% if user == listing.seller %}
       <div class="mt-3 d-flex gap-2 flex-wrap">
         {% if listing.status in "active reserved" %}
-          <a href="{% url 'listing_edit' listing.pk %}" class="btn btn-outline-warning btn-sm">
+          <a href="{% url 'listing_edit' listing.pk %}" class="btn btn-outline-gold btn-sm">
             <i class="bi bi-pencil me-1"></i>Edit
           </a>
         {% endif %}
         {% if listing.status == "active" %}
           <form method="post" action="{% url 'listing_cancel' listing.pk %}">
             {% csrf_token %}
-            <button class="btn btn-outline-danger btn-sm"
+            <button class="btn btn-sm"
+                    style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--cv-red)"
                     onclick="return confirm('Cancel this listing?')">
               <i class="bi bi-x-circle me-1"></i>Cancel Listing
             </button>
           </form>
         {% endif %}
-        <a href="{% url 'my_listings' %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'my_listings' %}" class="btn btn-sm"
+           style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
           <i class="bi bi-list me-1"></i>My Listings
         </a>
       </div>
@@ -94,33 +101,37 @@
   <!-- Right: offer panel -->
   <div class="col-md-4">
 
-    <!-- ── Buyer: make offer ────────────────────────────── -->
     {% if user.is_authenticated and user != listing.seller and listing.status == "active" %}
       {% if user_offer %}
         <!-- Existing offer status -->
-        <div class="stat-card p-3 mb-3">
-          <h6 class="fw-semibold mb-2"><i class="bi bi-chat-dots me-2 text-warning"></i>Your Offer</h6>
+        <div class="cv-card p-3 mb-3">
+          <h6 class="fw-700 mb-2"><i class="bi bi-chat-dots me-2 text-gold"></i>Your Offer</h6>
           <div class="mb-1">
             {% if user_offer.offered_price %}
-              <span class="fw-bold text-warning">${{ user_offer.offered_price }}</span>
+              <span class="fw-700 text-gold" style="font-size:1.2rem">${{ user_offer.offered_price }}</span>
             {% endif %}
             {% if user_offer.trade_offer_description %}
-              <p class="text-muted small mb-1">{{ user_offer.trade_offer_description }}</p>
+              <p class="text-cv-muted small mb-1">{{ user_offer.trade_offer_description }}</p>
             {% endif %}
           </div>
           <span class="badge
-            {% if user_offer.status == 'pending' %}bg-info
-            {% elif user_offer.status == 'accepted' %}bg-success
-            {% elif user_offer.status == 'countered' %}bg-warning text-dark
-            {% else %}bg-secondary{% endif %}">
+            {% if user_offer.status == 'pending' %}
+              " style="background:rgba(59,130,246,.15);color:#60a5fa
+            {% elif user_offer.status == 'accepted' %}
+              " style="background:var(--cv-green-dim);color:var(--cv-green)
+            {% elif user_offer.status == 'countered' %}
+              " style="background:rgba(251,191,36,.15);color:#fbbf24
+            {% else %}
+              " style="background:var(--cv-surface-2);color:var(--cv-text-muted)
+            {% endif %}">
             {{ user_offer.get_status_display }}
           </span>
 
           {% if user_offer.status == "countered" %}
-            <div class="mt-2 p-2 rounded-3" style="background:#2a2a3f">
-              <div class="small text-muted">Seller's counter:</div>
+            <div class="mt-2 p-2 rounded-cv" style="background:var(--cv-surface-2);border:1px solid var(--cv-border)">
+              <div class="small text-cv-muted">Seller's counter:</div>
               {% if user_offer.counter_price %}
-                <div class="fw-bold text-warning">${{ user_offer.counter_price }}</div>
+                <div class="fw-700 text-gold">${{ user_offer.counter_price }}</div>
               {% endif %}
               {% if user_offer.counter_message %}
                 <p class="small mb-1">{{ user_offer.counter_message }}</p>
@@ -128,11 +139,14 @@
               <div class="d-flex gap-2 mt-2">
                 <form method="post" action="{% url 'accept_counter' user_offer.pk %}">
                   {% csrf_token %}
-                  <button class="btn btn-success btn-sm">Accept Counter</button>
+                  <button class="btn btn-gold btn-sm fw-700">Accept Counter</button>
                 </form>
                 <form method="post" action="{% url 'withdraw_offer' user_offer.pk %}">
                   {% csrf_token %}
-                  <button class="btn btn-outline-danger btn-sm">Decline</button>
+                  <button class="btn btn-sm"
+                          style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--cv-red)">
+                    Decline
+                  </button>
                 </form>
               </div>
             </div>
@@ -141,7 +155,8 @@
           {% if user_offer.status == "pending" %}
             <form method="post" action="{% url 'withdraw_offer' user_offer.pk %}" class="mt-2">
               {% csrf_token %}
-              <button class="btn btn-outline-secondary btn-sm">
+              <button class="btn btn-sm"
+                      style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b">
                 <i class="bi bi-x me-1"></i>Withdraw Offer
               </button>
             </form>
@@ -149,83 +164,85 @@
         </div>
 
       {% elif listing.accepts_offers %}
-        <div class="stat-card p-3 mb-3">
-          <h6 class="fw-semibold mb-3"><i class="bi bi-chat-dots me-2 text-warning"></i>Make an Offer</h6>
+        <div class="cv-card p-3 mb-3">
+          <h6 class="fw-700 mb-3"><i class="bi bi-chat-dots me-2 text-gold"></i>Make an Offer</h6>
           <form method="post" action="{% url 'make_offer' listing.pk %}">
             {% csrf_token %}
             {% for field in offer_form %}
               <div class="mb-2">
-                <label class="form-label small fw-semibold mb-1">{{ field.label }}</label>
+                <label class="form-label small fw-600 mb-1">{{ field.label }}</label>
                 {{ field }}
                 {% for err in field.errors %}
                   <div class="text-danger" style="font-size:.75rem">{{ err }}</div>
                 {% endfor %}
               </div>
             {% endfor %}
-            <button type="submit" class="btn btn-warning w-100 btn-sm fw-semibold mt-1">
+            <button type="submit" class="btn btn-gold w-100 btn-sm fw-700 mt-1 btn-trade">
               Send Offer
             </button>
           </form>
         </div>
       {% endif %}
 
-      <!-- Buy now (no negotiation) -->
+      <!-- Buy now -->
       {% if listing.asking_price and listing.status == "active" %}
-        <div class="stat-card p-3 text-center">
-          <div class="text-muted small mb-2">Ready to buy at asking price?</div>
-          <a href="mailto:{{ listing.seller.email }}?subject=CardVault: {{ card.name }} listing {{ listing.pk }}"
-             class="btn btn-success w-100 btn-sm fw-semibold">
+        <div class="cv-card p-3 text-center">
+          <div class="text-cv-muted small mb-2">Ready to buy at asking price?</div>
+          <a href="mailto:{{ listing.seller.email }}?subject=TCGLedger: {{ card.name }} listing {{ listing.pk }}"
+             class="btn btn-gold w-100 btn-sm fw-700 btn-trade">
             <i class="bi bi-envelope me-1"></i>Contact Seller
           </a>
-          <div class="text-muted mt-1" style="font-size:.65rem">
+          <div class="text-cv-muted mt-1" style="font-size:.65rem">
             Direct contact for payment &amp; shipping.
           </div>
         </div>
       {% endif %}
 
     {% elif not user.is_authenticated %}
-      <div class="stat-card p-3 text-center">
-        <p class="text-muted small mb-2">Log in to make an offer or contact the seller.</p>
-        <a href="{% url 'account_login' %}" class="btn btn-warning btn-sm fw-semibold">Log In</a>
+      <div class="cv-card p-3 text-center">
+        <p class="text-cv-muted small mb-2">Log in to make an offer or contact the seller.</p>
+        <a href="{% url 'account_login' %}" class="btn btn-gold btn-sm fw-700">Log In</a>
       </div>
     {% endif %}
 
-    <!-- ── Seller: pending offers panel ─────────────────── -->
+    <!-- Seller: pending offers -->
     {% if user == listing.seller and pending_offers %}
-      <div class="stat-card p-3 mt-3">
-        <h6 class="fw-semibold mb-3">
-          <i class="bi bi-inbox me-2 text-warning"></i>Pending Offers ({{ pending_offers|length }})
+      <div class="cv-card p-3 mt-3">
+        <h6 class="fw-700 mb-3">
+          <i class="bi bi-inbox me-2 text-gold"></i>Pending Offers ({{ pending_offers|length }})
         </h6>
         {% for offer in pending_offers %}
-          <div class="border border-secondary rounded-3 p-2 mb-2">
+          <div class="p-2 mb-2 rounded-cv" style="border:1px solid var(--cv-border);background:var(--cv-surface-2)">
             <div class="d-flex justify-content-between align-items-start mb-1">
-              <a href="{% url 'public_profile' offer.buyer.username %}" class="text-warning small fw-semibold">
+              <a href="{% url 'public_profile' offer.buyer.username %}" class="text-gold small fw-600">
                 {{ offer.buyer.username }}
               </a>
               {% if offer.offered_price %}
-                <span class="fw-bold text-warning">${{ offer.offered_price }}</span>
+                <span class="fw-700 text-gold">${{ offer.offered_price }}</span>
               {% endif %}
             </div>
             {% if offer.trade_offer_description %}
-              <p class="small text-muted mb-1">{{ offer.trade_offer_description|truncatechars:80 }}</p>
+              <p class="small text-cv-muted mb-1">{{ offer.trade_offer_description|truncatechars:80 }}</p>
             {% endif %}
             {% if offer.message %}
               <p class="small mb-2">{{ offer.message|truncatechars:80 }}</p>
             {% endif %}
 
-            <!-- Accept / Decline -->
             <div class="d-flex gap-1 flex-wrap mb-2">
               <form method="post" action="{% url 'respond_offer' offer.pk %}">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="accept">
-                <button class="btn btn-success btn-sm">Accept</button>
+                <button class="btn btn-gold btn-sm fw-700">Accept</button>
               </form>
               <form method="post" action="{% url 'respond_offer' offer.pk %}">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="decline">
-                <button class="btn btn-outline-danger btn-sm">Decline</button>
+                <button class="btn btn-sm"
+                        style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--cv-red)">
+                  Decline
+                </button>
               </form>
-              <button class="btn btn-outline-warning btn-sm"
+              <button class="btn btn-outline-gold btn-sm"
                       onclick="toggleCounter({{ offer.pk }})">Counter</button>
             </div>
 
@@ -235,10 +252,10 @@
                 {% csrf_token %}
                 <input type="hidden" name="action" value="counter">
                 <input type="number" name="counter_price" step="0.01" placeholder="Counter price ($)"
-                       class="form-control form-control-sm bg-dark border-secondary text-light mb-1">
+                       class="form-control form-control-sm cv-input mb-1">
                 <textarea name="counter_message" rows="2" placeholder="Your message…"
-                          class="form-control form-control-sm bg-dark border-secondary text-light mb-1"></textarea>
-                <button class="btn btn-warning btn-sm w-100">Send Counter</button>
+                          class="form-control form-control-sm cv-input mb-1"></textarea>
+                <button class="btn btn-gold btn-sm w-100 fw-700">Send Counter</button>
               </form>
             </div>
           </div>

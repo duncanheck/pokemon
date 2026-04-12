@@ -1,42 +1,42 @@
 {% comment %}
-Include this partial once per page. Card data is injected into it via JS
-when the user clicks "Add to Collection" on any card tile.
+Include this partial once per page. Card data is injected via JS when the user clicks "Add" on any card tile.
 Usage: {% include "partials/add_to_collection_modal.html" %}
 {% endcomment %}
-<div class="modal fade" id="addModal" tabindex="-1">
+<div class="modal fade tcg-modal" id="addModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark border border-secondary">
+    <div class="modal-content">
       <form method="post" action="{% url 'add_to_collection' %}">
         {% csrf_token %}
-        <input type="hidden" name="next"            value="{{ request.get_full_path }}">
-        <input type="hidden" name="card_tcg_id"     id="modal_tcg_id">
-        <input type="hidden" name="card_tcg"        id="modal_tcg">
-        <input type="hidden" name="card_name"       id="modal_card_name">
-        <input type="hidden" name="card_set_name"   id="modal_set_name">
-        <input type="hidden" name="card_image_url"  id="modal_image_url">
+        <input type="hidden" name="next"              value="{{ request.get_full_path }}">
+        <input type="hidden" name="card_tcg_id"       id="modal_tcg_id">
+        <input type="hidden" name="card_tcg"          id="modal_tcg">
+        <input type="hidden" name="card_name"         id="modal_card_name">
+        <input type="hidden" name="card_set_name"     id="modal_set_name">
+        <input type="hidden" name="card_image_url"    id="modal_image_url">
         <input type="hidden" name="card_market_price" id="modal_market_price">
 
-        <div class="modal-header border-secondary">
-          <h5 class="modal-title fw-bold">Add to Collection</h5>
+        <div class="modal-header">
+          <h5 class="modal-title fw-700">Add to Portfolio</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
           <!-- Card preview strip -->
-          <div class="d-flex align-items-center gap-3 mb-4 p-2 rounded-3" style="background:#1a1a2e">
+          <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded-cv"
+               style="background:var(--cv-surface-2);border:1px solid var(--cv-border)">
             <img id="modal_img" src="" alt="" style="height:70px;border-radius:6px"
                  onerror="this.style.display='none'">
             <div>
-              <div class="fw-bold" id="modal_name_display">—</div>
-              <div class="text-muted small" id="modal_set_display">—</div>
-              <div class="text-warning small fw-semibold" id="modal_price_display"></div>
+              <div class="fw-700" id="modal_name_display">—</div>
+              <div class="text-cv-muted small" id="modal_set_display">—</div>
+              <div class="text-gold small fw-700 live-price" id="modal_price_display"></div>
             </div>
           </div>
 
           <div class="row g-2">
             <div class="col-6">
-              <label class="form-label small fw-semibold">Condition</label>
-              <select name="condition" class="form-select form-select-sm bg-dark border-secondary text-light">
+              <label class="form-label small fw-600">Condition</label>
+              <select name="condition" class="form-select form-select-sm cv-select">
                 <option value="M">Mint</option>
                 <option value="NM" selected>Near Mint</option>
                 <option value="LP">Lightly Played</option>
@@ -46,42 +46,46 @@ Usage: {% include "partials/add_to_collection_modal.html" %}
               </select>
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Quantity</label>
+              <label class="form-label small fw-600">Quantity</label>
               <input type="number" name="quantity" value="1" min="1" max="9999"
-                     class="form-control form-control-sm bg-dark border-secondary text-light">
+                     class="form-control form-control-sm cv-input">
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Purchase price ($)</label>
+              <label class="form-label small fw-600">Purchase price ($)</label>
               <input type="number" name="purchase_price" step="0.01" min="0" placeholder="optional"
-                     class="form-control form-control-sm bg-dark border-secondary text-light">
+                     class="form-control form-control-sm cv-input">
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Purchase date</label>
+              <label class="form-label small fw-600">Purchase date</label>
               <input type="date" name="purchase_date"
-                     class="form-control form-control-sm bg-dark border-secondary text-light">
+                     class="form-control form-control-sm cv-input">
             </div>
-            <div class="col-12 mt-1">
-              <div class="form-check form-check-inline">
+            <div class="col-12 mt-1 d-flex gap-3">
+              <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="is_foil" id="modal_foil">
                 <label class="form-check-label small" for="modal_foil">Foil</label>
               </div>
-              <div class="form-check form-check-inline">
+              <div class="form-check">
                 <input class="form-check-input" type="checkbox" name="is_hunted" id="modal_hunted">
                 <label class="form-check-label small" for="modal_hunted">Want List</label>
               </div>
             </div>
             <div class="col-12">
-              <label class="form-label small fw-semibold">Notes</label>
+              <label class="form-label small fw-600">Notes</label>
               <textarea name="notes" rows="2"
-                        class="form-control form-control-sm bg-dark border-secondary text-light"
+                        class="form-control form-control-sm cv-input"
                         placeholder="Optional notes…"></textarea>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer border-secondary">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning btn-sm fw-semibold px-4">Add</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm"
+                  style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#64748b"
+                  data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-gold btn-sm fw-700 px-4">
+            <i class="bi bi-plus-lg me-1"></i>Add to Portfolio
+          </button>
         </div>
       </form>
     </div>
@@ -89,18 +93,17 @@ Usage: {% include "partials/add_to_collection_modal.html" %}
 </div>
 
 <script>
-// Populate modal with card data when any "Add" button is clicked
 document.addEventListener("click", function(e) {
   const btn = e.target.closest("[data-add-card]");
   if (!btn) return;
   const d = btn.dataset;
-  document.getElementById("modal_tcg_id").value      = d.tcgId    || "";
-  document.getElementById("modal_tcg").value         = d.tcg      || "";
-  document.getElementById("modal_card_name").value   = d.name     || "";
-  document.getElementById("modal_set_name").value    = d.setName  || "";
-  document.getElementById("modal_image_url").value   = d.imageUrl || "";
-  document.getElementById("modal_market_price").value = d.price   || "";
-  document.getElementById("modal_img").src           = d.imageUrl || "";
+  document.getElementById("modal_tcg_id").value       = d.tcgId    || "";
+  document.getElementById("modal_tcg").value          = d.tcg      || "";
+  document.getElementById("modal_card_name").value    = d.name     || "";
+  document.getElementById("modal_set_name").value     = d.setName  || "";
+  document.getElementById("modal_image_url").value    = d.imageUrl || "";
+  document.getElementById("modal_market_price").value = d.price    || "";
+  document.getElementById("modal_img").src            = d.imageUrl || "";
   document.getElementById("modal_name_display").textContent = d.name    || "—";
   document.getElementById("modal_set_display").textContent  = d.setName || "—";
   document.getElementById("modal_price_display").textContent =

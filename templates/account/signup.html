@@ -8,23 +8,28 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-6 col-lg-5">
-    <div class="stat-card p-4">
-      <h2 class="mb-1 fw-bold">Create your vault</h2>
-      <p class="text-muted small mb-4">Track, trade, and grow your TCG collection</p>
+    <div class="cv-card p-4">
+      <div class="text-center mb-4">
+        <div style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.25rem">
+          TCG<span style="color:var(--cv-gold)">Ledger</span>
+        </div>
+        <h2 class="mb-1 fw-700" style="font-size:1.3rem">Create your ledger</h2>
+        <p class="text-cv-muted small mb-0">Track, value, and trade your TCG collection</p>
+      </div>
 
       <form method="post" action="{% url 'account_signup' %}">
         {% csrf_token %}
         {% for field in form %}
           <div class="mb-3">
-            <label class="form-label small fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <label class="form-label small fw-600" for="{{ field.id_for_label }}">{{ field.label }}</label>
             <input type="{{ field.field.widget.input_type }}"
                    name="{{ field.html_name }}"
                    id="{{ field.id_for_label }}"
-                   class="form-control bg-dark border-secondary text-light{% if field.errors %} is-invalid{% endif %}"
+                   class="form-control cv-input{% if field.errors %} is-invalid{% endif %}"
                    {% if field.value %}value="{{ field.value }}"{% endif %}
                    autocomplete="{{ field.html_name }}">
             {% if field.help_text %}
-              <div class="form-text text-muted small">{{ field.help_text }}</div>
+              <div class="text-cv-muted small mt-1">{{ field.help_text }}</div>
             {% endif %}
             {% for error in field.errors %}
               <div class="invalid-feedback">{{ error }}</div>
@@ -36,12 +41,14 @@
           <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
         {% endif %}
 
-        <button type="submit" class="btn btn-warning w-100 fw-semibold mt-1">Create Account</button>
+        <button type="submit" class="btn btn-gold w-100 fw-700 mt-1">
+          <i class="bi bi-lightning-charge me-1"></i>Create Account — it's free
+        </button>
       </form>
 
-      <hr class="border-secondary my-3">
-      <p class="text-center text-muted small mb-0">
-        Already have an account? <a href="{% url 'account_login' %}" class="text-warning">Log in</a>
+      <hr class="divider my-3">
+      <p class="text-center text-cv-muted small mb-0">
+        Already have an account? <a href="{% url 'account_login' %}" class="text-gold">Log in</a>
       </p>
     </div>
   </div>

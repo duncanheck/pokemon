@@ -1,10 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Card Search{% endblock %}
+{% block title %}Search Cards{% endblock %}
+{% block nav_browse %}active{% endblock %}
 
 {% block content %}
 <!-- Search bar -->
 <div class="row justify-content-center mb-4">
   <div class="col-lg-8">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <i class="bi bi-search" style="color:var(--cv-gold)"></i>
+      <h5 class="mb-0 fw-700">Search Cards</h5>
+      <span class="live-badge ms-1" style="font-size:.7rem">
+        <span class="live-badge-dot"></span>live prices
+      </span>
+    </div>
     <form method="get" action="{% url 'card_search' %}" class="d-flex gap-2 flex-wrap">
       <select name="tcg" class="form-select form-select-sm cv-select" style="max-width:160px">
         <option value="">All Games</option>
@@ -17,7 +25,7 @@
                class="form-control cv-input"
                placeholder="Search cards — e.g. Charizard, Black Lotus…"
                autofocus>
-        <button class="btn btn-gold fw-600 px-4" type="submit">
+        <button class="btn btn-gold fw-700 px-4" type="submit">
           <i class="bi bi-search me-1"></i>Search
         </button>
       </div>
@@ -26,15 +34,20 @@
 </div>
 
 {% if error %}
-  <div class="alert alert-warning alert-dismissible fade show">
-    <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+  <div class="alert alert-dismissible fade show mb-3"
+       style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--cv-text)">
+    <i class="bi bi-exclamation-triangle me-2" style="color:var(--cv-red)"></i>{{ error }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
 {% endif %}
 
 {% if query %}
-  <p class="text-muted small mb-3">
-    {% if total %}{{ total }} result{{ total|pluralize }} for <strong>{{ query }}</strong>{% else %}No results for <strong>{{ query }}</strong>{% endif %}
+  <p class="text-cv-muted small mb-3">
+    {% if total %}
+      <span style="color:var(--cv-gold);font-weight:600">{{ total }}</span> result{{ total|pluralize }} for <strong style="color:#fff">{{ query }}</strong>
+    {% else %}
+      No results for <strong style="color:#fff">{{ query }}</strong>
+    {% endif %}
   </p>
 {% endif %}
 
@@ -50,7 +63,7 @@
           {% else %}
             <div class="d-flex align-items-center justify-content-center mb-2"
                  style="height:140px;width:100%;background:var(--cv-surface)">
-              <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.2"></i>
+              <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.15"></i>
             </div>
           {% endif %}
 
@@ -58,12 +71,12 @@
           <div class="text-cv-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
 
           {% if card.market_price %}
-            <div class="fw-700 text-gold small mb-2">${{ card.market_price }}</div>
+            <div class="fw-700 text-gold small mb-2 live-price">${{ card.market_price }}</div>
           {% endif %}
 
           {% if user.is_authenticated %}
             <button type="button"
-                    class="btn btn-gold btn-sm mt-auto w-100 fw-600"
+                    class="btn btn-gold btn-sm mt-auto w-100 fw-700"
                     data-add-card
                     data-tcg-id="{{ card.tcg_id }}"
                     data-tcg="{{ card.tcg }}"
@@ -82,25 +95,30 @@
   <!-- Pagination -->
   <div class="d-flex gap-2 justify-content-center">
     {% if page > 1 %}
-      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"-1" }}" class="btn btn-outline-secondary btn-sm">
+      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"-1" }}"
+         class="btn btn-sm"
+         style="background:var(--cv-surface-2);border:1px solid var(--cv-border);color:#94a3b8">
         <i class="bi bi-chevron-left"></i> Prev
       </a>
     {% endif %}
     {% if has_next %}
-      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"1" }}" class="btn btn-outline-warning btn-sm">
+      <a href="?q={{ query }}&tcg={{ tcg }}&page={{ page|add:"1" }}"
+         class="btn btn-gold btn-sm fw-700">
         Next <i class="bi bi-chevron-right"></i>
       </a>
     {% endif %}
   </div>
+
 {% elif query %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-search fs-1 d-block mb-2 opacity-25"></i>
+  <div class="text-center py-5 text-cv-muted">
+    <i class="bi bi-search fs-1 d-block mb-2 opacity-15"></i>
     No cards found. Try a different name or filter.
   </div>
 {% else %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2 opacity-25"></i>
-    Search for any card across all supported TCGs.
+  <div class="text-center py-5 text-cv-muted">
+    <i class="bi bi-grid-3x3-gap fs-1 d-block mb-2 opacity-15"></i>
+    <p class="mb-0">Search for any card across all supported TCGs.</p>
+    <p class="small mt-1" style="color:#334155">Powered by live market pricing</p>
   </div>
 {% endif %}
 
