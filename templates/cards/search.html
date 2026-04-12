@@ -43,7 +43,7 @@
 
 {% if query %}
   <p class="text-cv-muted small mb-3">
-    {% if total %}
+    {% if results %}
       <span style="color:var(--cv-gold);font-weight:600">{{ total }}</span> result{{ total|pluralize }} for <strong style="color:#fff">{{ query }}</strong>
     {% else %}
       No results for <strong style="color:#fff">{{ query }}</strong>

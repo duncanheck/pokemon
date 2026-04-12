@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import Card
-from .services import search_cards, get_or_create_card_from_api_data, refresh_card_prices_in_db
+from .services import search_cards, get_card_by_id, get_or_create_card_from_api_data, refresh_card_prices_in_db
 from apps.collection.forms import AddToCollectionForm
 
 
@@ -32,6 +32,11 @@ def card_search(request):
 def card_detail(request, tcg_id):
     """Show card detail + add-to-collection form. Creates DB row if not yet synced."""
     card = Card.objects.filter(tcg_id=tcg_id).first()
+    if card is None:
+        # Not in local DB — fetch from API and persist so prices can be tracked
+        api_data = get_card_by_id(tcg_id)
+        if api_data:
+            card, _ = get_or_create_card_from_api_data(api_data)
     if card:
         refresh_card_prices_in_db(card)
         card.refresh_from_db()
@@ -68,6 +73,8 @@ def add_to_collection(request):
         if card is None:
             messages.error(request, "Could not identify card. Please try again.")
             return redirect("card_search")
+        # Fetch full prices from API now that the card is persisted
+        refresh_card_prices_in_db(card)
 
     from apps.collection.models import CollectionItem
     item, created = CollectionItem.objects.get_or_create(
