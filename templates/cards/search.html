@@ -77,38 +77,42 @@
         <div class="tcg-card-tile p-2 h-100 d-flex flex-column align-items-center text-center"
              data-tcg-id="{{ card.tcg_id }}">
 
-          {% if card.image_url %}
-            <img src="{{ card.image_url }}" alt="{{ card.name }}"
-                 class="img-fluid mb-2" style="max-height:140px;object-fit:contain">
-          {% else %}
-            <div class="d-flex align-items-center justify-content-center mb-2"
-                 style="height:140px;width:100%;background:var(--cv-surface)">
-              <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.15"></i>
-            </div>
-          {% endif %}
+          {# Clickable area → card detail; buttons below are outside this anchor #}
+          <a href="{% url 'card_detail' card.tcg_id %}"
+             class="d-flex flex-column align-items-center text-decoration-none w-100">
+            {% if card.image_url %}
+              <img src="{{ card.image_url }}" alt="{{ card.name }}"
+                   class="img-fluid mb-2" style="max-height:140px;object-fit:contain">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center mb-2"
+                   style="height:140px;width:100%;background:var(--cv-surface)">
+                <i class="bi bi-card-image" style="font-size:2.5rem;opacity:.15"></i>
+              </div>
+            {% endif %}
 
-          <div class="small fw-700 text-white text-truncate w-100">{{ card.name }}</div>
-          <div class="text-cv-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
+            <div class="small fw-700 text-white text-truncate w-100">{{ card.name }}</div>
+            <div class="text-cv-muted mb-1" style="font-size:.7rem">{{ card.set_name|truncatechars:20 }}</div>
 
-          <!-- Price: rendered server-side if available, otherwise lazy-loaded -->
-          {% if card.market_price %}
-            <div class="fw-700 text-gold small mb-1 live-price
-                        price-cell" data-tcg-id="{{ card.tcg_id }}">
-              ${{ card.market_price }}
-            </div>
-          {% else %}
-            <div class="text-cv-muted small mb-1 price-cell"
-                 data-tcg-id="{{ card.tcg_id }}"
-                 style="min-height:1.4em">
-              <span class="price-loading" style="opacity:.4;font-size:.7rem">⋯</span>
-            </div>
-          {% endif %}
+            <!-- Price: server-side if available, otherwise lazy-loaded -->
+            {% if card.market_price %}
+              <div class="fw-700 text-gold small mb-1 live-price price-cell"
+                   data-tcg-id="{{ card.tcg_id }}">
+                ${{ card.market_price }}
+              </div>
+            {% else %}
+              <div class="text-cv-muted small mb-1 price-cell"
+                   data-tcg-id="{{ card.tcg_id }}"
+                   style="min-height:1.4em">
+                <span class="price-loading" style="opacity:.4;font-size:.7rem">⋯</span>
+              </div>
+            {% endif %}
 
-          <!-- Tiny sparkline canvas (populated by JS) -->
-          <canvas class="sparkline-canvas mb-1"
-                  data-tcg-id="{{ card.tcg_id }}"
-                  width="80" height="28"
-                  style="display:none;opacity:.7"></canvas>
+            <!-- Tiny sparkline canvas (populated by JS) -->
+            <canvas class="sparkline-canvas mb-1"
+                    data-tcg-id="{{ card.tcg_id }}"
+                    width="80" height="28"
+                    style="display:none;opacity:.7"></canvas>
+          </a>{# end clickable area #}
 
           <!-- Compare toggle -->
           <button type="button"
