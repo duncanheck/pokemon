@@ -113,17 +113,24 @@ def add_to_collection(request):
 def card_price_json(request, tcg_id):
     """Return current prices as JSON — used by lazy price loader on search page."""
     card = Card.objects.filter(tcg_id=tcg_id).values(
-        "market_price", "low_price", "high_price", "foil_price"
+        "market_price", "low_price", "high_price", "foil_price",
+        "name", "set_name", "tcg"
     ).first()
 
     if card and card["market_price"]:
-        return JsonResponse({k: str(v) if v else None for k, v in card.items()})
+        price_keys = ("market_price", "low_price", "high_price", "foil_price")
+        return JsonResponse({k: str(card[k]) if card[k] else None for k in price_keys})
 
-    prices = get_card_prices(tcg_id)
+    prices = get_card_prices(
+        tcg_id,
+        card_name=card.get("name", "") if card else "",
+        set_name=card.get("set_name", "") if card else "",
+        tcg=card.get("tcg", "") if card else "",
+    )
     if prices:
         return JsonResponse({k: str(v) if v else None for k, v in prices.items()})
 
-    return JsonResponse({"market_price": None})
+    return JsonResponse({"market_price": None, "error": "not_found"})
 
 
 # ── Sparkline JSON (7-day history) ────────────────────────────────────────────

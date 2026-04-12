@@ -75,7 +75,10 @@
     {% for card in results %}
       <div class="col">
         <div class="tcg-card-tile p-2 h-100 d-flex flex-column align-items-center text-center"
-             data-tcg-id="{{ card.tcg_id }}">
+             data-tcg-id="{{ card.tcg_id }}"
+             data-tcg="{{ card.tcg }}"
+             data-name="{{ card.name }}"
+             data-set="{{ card.set_name }}">
 
           {# Clickable area → card detail; buttons below are outside this anchor #}
           <a href="{% url 'card_detail' card.tcg_id %}"
@@ -184,6 +187,29 @@
 (function () {
   "use strict";
 
+  // ── CardAPI fallback: https://api.pokemontcg.io/v2 (Pokémon cards only) ──
+  async function searchPokemon(name, setName) {
+    let q = `name:"${name}"`;
+    if (setName) q += ` set.name:"${setName}"`;
+    const r = await fetch(
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(q)}&pageSize=5&select=id,name,tcgplayer`
+    );
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.data?.[0] ?? null;
+  }
+  function extractPokemonPrices(card) {
+    const prices = card?.tcgplayer?.prices ?? {};
+    for (const v of ["holofoil", "normal", "1stEditionHolofoil", "reverseHolofoil"]) {
+      const p = prices[v];
+      if (p?.market) return { market: p.market, low: p.low, high: p.high, foil: v !== "normal" ? p.market : null };
+    }
+    return null;
+  }
+  function getBestPokemonPrice(card) {
+    return extractPokemonPrices(card)?.market ?? null;
+  }
+
   // Collect cards that need prices fetched
   const needsPrice = [];
   document.querySelectorAll(".price-cell[data-tcg-id]").forEach(el => {
@@ -210,13 +236,27 @@
             document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"]`).forEach(el => {
               el.innerHTML = `<span class="fw-700 text-gold live-price">$${parseFloat(d.market_price).toFixed(2)}</span>`;
             });
-            // Update price on Add button
             const btn = document.querySelector(`[data-add-card][data-tcg-id="${tcgId}"]`);
             if (btn) btn.dataset.price = d.market_price;
           } else {
-            document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"] .price-loading`).forEach(
-              el => el.remove()
-            );
+            // JustTCG returned no price — try pokemontcg.io fallback for Pokémon tiles
+            const tile = document.querySelector(`.tcg-card-tile[data-tcg-id="${tcgId}"]`);
+            let resolved = false;
+            if (tile?.dataset.tcg === "pokemon" && tile.dataset.name) {
+              const fbCard = await searchPokemon(tile.dataset.name, tile.dataset.set || "");
+              const price = getBestPokemonPrice(fbCard);
+              if (price) {
+                document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"]`).forEach(el => {
+                  el.innerHTML = `<span class="fw-700 text-gold live-price" title="via pokemontcg.io">$${parseFloat(price).toFixed(2)}</span>`;
+                });
+                const btn = document.querySelector(`[data-add-card][data-tcg-id="${tcgId}"]`);
+                if (btn) btn.dataset.price = price;
+                resolved = true;
+              }
+            }
+            if (!resolved) {
+              document.querySelectorAll(`.price-cell[data-tcg-id="${tcgId}"] .price-loading`).forEach(el => el.remove());
+            }
           }
         } catch (_) { /* silently skip */ }
       }));
